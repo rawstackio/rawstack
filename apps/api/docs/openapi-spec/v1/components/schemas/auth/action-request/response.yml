@@ -1,0 +1,22 @@
+ActionRequestResponse:
+  type: object
+  properties:
+    item:
+      $ref: '#/ActionRequest'
+  required:
+    - item
+ActionRequest:
+  type: object
+  required:
+    - id
+    - action
+    - status
+  properties:
+    id:
+      type: string
+    action:
+      type: string
+      enum: ['EMAIL_VERIFICATION']
+    status:
+      type: string
+      enum: ['PROCESSING', 'COMPLETED', 'FAILED']

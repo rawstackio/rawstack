@@ -1,0 +1,54 @@
+services:
+  dev-db:
+    image: postgres:16
+    container_name: rawstack-ts-db
+    ports:
+      - 5434:5432
+    environment:
+      POSTGRES_USER: rawstack
+      POSTGRES_PASSWORD: 123
+      POSTGRES_DB: rawstack-ts-db
+  redis:
+    image: redis:latest
+    container_name: rstack-redis
+    command: redis-server
+    volumes:
+      - redis:/var/lib/redis
+      - redis-config:/usr/local/etc/redis/redis.conf
+    ports:
+      - 6379:6379
+
+  # --- Postgres (test) ---
+  db_test:
+    image: postgres:16
+    container_name: rawstack-ts-db-test
+    environment:
+      POSTGRES_USER: testuser
+      POSTGRES_PASSWORD: testpass
+      POSTGRES_DB: rawstack-ts-db-test
+    ports:
+      - "5433:5432" # expose on a different host port
+    volumes:
+      - pgdata_test:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U testuser -d myapp_test" ]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  # --- Redis (test) ---
+  redis_test:
+    image: redis:7
+    container_name: rstack_redis_test
+    command: [ "redis-server", "--appendonly", "no" ] # no persistence for tests (faster/cleaner)
+    ports:
+      - "6380:6379"
+    healthcheck:
+      test: [ "CMD", "redis-cli", "-p", "6379", "ping" ]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+volumes:
+  redis:
+  pgdata_test:
+  redis-config:

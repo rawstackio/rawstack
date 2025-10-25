@@ -1,0 +1,23 @@
+post:
+  summary: Creates an Auth Action Request
+  tags: [ authentication ]
+  operationId: createActionRequest
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: '../../schemas/auth/action-request/request.yml#/ActionRequestPostRequest'
+  responses:
+    '201':
+     description: OK
+     content:
+       application/json:
+         schema:
+           $ref: '../../schemas/auth/action-request/response.yml#/ActionRequestResponse'
+    default:
+      description: Unexpected error
+      content:
+        application/json:
+          schema:
+            $ref: '../../schemas/common/response.yml#/Error'

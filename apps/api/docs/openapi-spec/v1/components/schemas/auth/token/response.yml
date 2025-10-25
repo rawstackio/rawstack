@@ -1,0 +1,35 @@
+AuthTokenResponse:
+  type: object
+  properties:
+    item:
+      oneOf:
+        - $ref: '#/AuthToken'
+        - $ref: '#/AuthAction'
+  required:
+    - item
+AuthToken:
+  type: object
+  required:
+    - accessToken
+    - refreshToken
+    - expiresAt
+  properties:
+    accessToken:
+      type: string
+      description: The access token
+    refreshToken:
+      type: string
+      description: The refresh token
+    expiresAt:
+      type: string
+      format: date-time
+      description: The date and time when the token expires
+AuthAction:
+  type: object
+  required:
+    - action
+  properties:
+    action:
+      type: string
+      enum: [CHECK_EMAIL]
+

@@ -1,0 +1,13 @@
+AuthTokenPostRequest:
+  type: object
+  required:
+    - email
+  properties:
+    email:
+      type: string
+      format: email
+    password:
+      type: string
+    refreshToken:
+      type: string
+      format: uuid

@@ -1,0 +1,23 @@
+post:
+  summary: Creates an Auth Token
+  tags: [ authentication ]
+  operationId: createToken
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: '../../schemas/auth/token/request.yml#/AuthTokenPostRequest'
+  responses:
+    '201':
+     description: OK
+     content:
+       application/json:
+         schema:
+           $ref: '../../schemas/auth/token/response.yml#/AuthTokenResponse'
+    default:
+      description: Unexpected error
+      content:
+        application/json:
+          schema:
+            $ref: '../../schemas/common/response.yml#/Error'

@@ -1,0 +1,61 @@
+get:
+  summary: Returns a user
+  description: Returns a user
+  security:
+    - BearerToken: []
+  tags: [ user ]
+  operationId: getUser
+  parameters:
+    - in: path
+      name: id
+      required: true
+      schema:
+        type: string
+        format: uuid
+  responses:
+    '200':
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: '../../schemas/user/response.yml#/UserResponse'
+    default:
+      description: Unexpected error
+      content:
+        application/json:
+          schema:
+            $ref: '../../schemas/common/response.yml#/Error'
+patch:
+  summary: Updates a user
+  description: Updates a user
+  security:
+    - BearerToken: []
+  tags: [ user ]
+  operationId:  usersIdPatch
+  parameters:
+    - in: path
+      name: id
+      required: true
+      schema:
+        type: string
+        format: uuid
+  requestBody:
+    required: true
+    description: Request for updating a User
+    content:
+      "application/json":
+        schema:
+          $ref: "../../schemas/user/request.yml#/UpdateUserRequest"
+  responses:
+    '200':
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: '../../schemas/user/response.yml#/UserResponse'
+    default:
+      description: Unexpected error
+      content:
+        application/json:
+          schema:
+            $ref: '../../schemas/common/response.yml#/Error'

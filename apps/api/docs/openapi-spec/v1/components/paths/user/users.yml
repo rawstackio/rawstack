@@ -1,0 +1,65 @@
+get:
+  summary: Returns a list of Users
+  description: Returns a list of Users to admin users only
+  security:
+    - BearerToken: []
+  tags: [ user ]
+  operationId: listUsers
+  parameters:
+    - in: query
+      name: page
+      required: false
+      schema:
+        type: integer
+    - in: query
+      name: perPage
+      required: false
+      schema:
+        type: integer
+    - in: query
+      name: q
+      required: false
+      schema:
+        type: string
+  responses:
+    '200':
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: '../../schemas/user/response.yml#/UserListResponse'
+    default:
+      description: Unexpected error
+      content:
+        application/json:
+          schema:
+            $ref: '../../schemas/common/response.yml#/Error'
+post:
+  summary: Creates a new User
+  tags: [ user ]
+  operationId: createUser
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: '../../schemas/user/request.yml#/UserPostRequest'
+  responses:
+    '201':
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: '../../schemas/user/response.yml#/UserResponse'
+    '409':
+      description: User not found
+      content:
+        application/json:
+          schema:
+            $ref: '../../schemas/common/response.yml#/ConflictError'
+    default:
+      description: Unexpected error
+      content:
+        application/json:
+          schema:
+            $ref: '../../schemas/common/response.yml#/Error'

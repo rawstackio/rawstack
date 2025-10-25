@@ -1,0 +1,23 @@
+{
+  "name": "@rawstack/api-client",
+  "version": "v0.1.0-alpha.1",
+  "description": "openapi client for the rawstack api",
+  "author": "dan byrne",
+  "private": true,
+  "keywords": [
+    "typescript",
+    "@rawstack/api-client"
+  ],
+  "license": "Unlicense",
+  "main": "./build/index.js",
+  "typings": "./build/index.d.ts",
+  "scripts": {
+    "build": "tsc --skipLibCheck"
+  },
+  "dependencies": {
+    "axios": "^1.7.7"
+  },
+  "devDependencies": {
+    "typescript": "*"
+  }
+}

@@ -1,0 +1,51 @@
+UserResponse:
+  type: object
+  required:
+    - item
+  properties:
+    item:
+      $ref: '#/User'
+User:
+  type: object
+  required:
+    - id
+    - email
+    - roles
+    - createdAt
+    - updatedAt
+  properties:
+    id:
+      type: string
+      format: uuid
+    roles:
+      type: array
+      items:
+        type: string
+        enum: [ADMIN, VERIFIED_USER]
+    email:
+      type: string
+    unverifiedEmail:
+      type: string
+    createdAt:
+      type: string
+      format: date-time
+    updatedAt:
+      type: string
+      format: date-time
+UserListResponse:
+  type: object
+  required:
+    - items
+    - meta
+  properties:
+    items:
+      type: array
+      items:
+        $ref: '#/User'
+    meta:
+      type: object
+      required:
+        - pagination
+      properties:
+        pagination:
+          $ref: '../common/response.yml#/Pagination'

@@ -1,0 +1,27 @@
+openapi: 3.0.0
+info:
+  title: RawStack API
+  version: v0.1.0-alpha.1
+servers:
+  - url: http://localhost:3000
+    description: Local Server
+components:
+  securitySchemes:
+    BearerToken:
+      type: http
+      description: The users bearer token
+      scheme: bearer
+      bearerFormat: JWT
+paths:
+  # auth domain
+  /auth/tokens:
+    $ref: './components/paths/auth/tokens.yml'
+  /auth/action-requests:
+    $ref: './components/paths/auth/action-requests.yml'
+  # user domain
+  /user/users:
+    $ref: './components/paths/user/users.yml'
+  /user/users/current:
+    $ref: './components/paths/user/users-current.yml'
+  /user/users/{id}:
+    $ref: './components/paths/user/users-id.yml'
