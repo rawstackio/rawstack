@@ -42,3 +42,34 @@ Expect active iteration and breaking changes before the first stable release (`v
 - Website: [https://rawstack.io](https://rawstack.io)
 - Repository: [https://github.com/rawstackio/rawstack](https://github.com/rawstackio/rawstack)
 - Contact: [hello@rawstack.io](mailto:hello@rawstack.io)
+
+## [v0.1.0-alpha.2] - 2025-11-07
+### 🚀 Overview
+This alpha introduces the **RawStack Mobile App**, built with **React Native**.  
+It provides the starting point for the mobile experience of the RawStack platform and integrates with the RawStack API Core.
+
+The focus of this release is establishing UI foundations, navigation structure, API connectivity, and shared design primitives.
+
+### ✨ Added
+- **React Native mobile app** (`apps/app`)
+- **App bootstrapping, navigation layout**, and core UI structure
+- **API client integration** with the RawStack API Core
+- **Shared auth/session handling** foundation
+- Development environment instructions for iOS/Android
+
+### 🧱 Scope
+Included in this release:
+- `apps/app` — RawStack Mobile App
+- `apps/api` — RawStack API Core (unchanged)
+
+Coming in future alphas:
+- `infra/` — Deployment & cluster configuration
+- `apps/web` — User-facing web application
+- `apps/admin` — Administration dashboard
+
+### ⚙️ Notes
+This is a **mobile alpha**. Expect UI iteration and architectural refinement as features expand.
+
+For setup instructions, see `apps/app/README.md`.
+
+
