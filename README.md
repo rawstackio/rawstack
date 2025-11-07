@@ -14,12 +14,12 @@ Built with a focus on **developer experience**, **domain-driven architecture**, 
 
 This repository (will) contain the full RawStack platform:
 
-| Item              | Description                       |
-|-------------------|-----------------------------------|
+| Item              | Description                      |
+|-------------------|----------------------------------|
 | `Core Api`        | The RawStack API Core — NestJS + Prisma backend |
-| `Mobile App`      | React Native mobile app [coming soon] |
-| `Admin Dashboard` | React + Vite admin web frontend [coming soon]  |
-| `Website`         | NextJs  web frontend [coming soon]             |
-| `infra/`          | AWS cdk [coming soon]                           |
+| `Mobile App`      | React Native mobile app |
+| `Admin Dashboard` | React + Vite admin web frontend [coming soon] |
+| `Website`         | NextJs  web frontend [coming soon]            |
+| `infra/`          | AWS cdk [coming soon]                          |
 
 For more information, visit [rawstack.io](https://rawstack.io).

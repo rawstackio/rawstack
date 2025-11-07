@@ -1,6 +1,6 @@
 {
   "name": "rawstack-api-core",
-  "version": "v0.1.0-alpha.1",
+  "version": "v0.1.0-alpha.2",
   "description": "RawStack core API (NestJS + Prisma). Open-source, self-hosted foundation for the RawStack suite.",
   "keywords": ["rawstack", "nestjs", "api", "prisma", "cqrs", "self-hosted"],
   "author": "Dan Byrne",
