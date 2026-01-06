@@ -13,6 +13,7 @@ AuthToken:
     - accessToken
     - refreshToken
     - expiresAt
+    - ttlSeconds
   properties:
     accessToken:
       type: string
@@ -24,6 +25,9 @@ AuthToken:
       type: string
       format: date-time
       description: The date and time when the token expires
+    ttlSeconds:
+      type: integer
+      description: Time to live in seconds
 AuthAction:
   type: object
   required:

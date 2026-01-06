@@ -9,8 +9,8 @@ post:
         schema:
           $ref: '../../schemas/auth/action-request/request.yml#/ActionRequestPostRequest'
   responses:
-    '201':
-     description: OK
+    '202':
+     description: Accepted
      content:
        application/json:
          schema:

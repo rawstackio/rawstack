@@ -25,9 +25,6 @@ export class CreateUserCommand extends CommandRunner {
       isAdmin?: boolean;
     }>('create-user-questions', undefined);
 
-    console.log({ values });
-
-    // @TODO: add admin role
     const roles = values.isAdmin ? [UserRoles.Admin] : [];
     const command = new CQRSCommand(id, values.email, values.password, roles);
     return await this.commandBus.execute(command);

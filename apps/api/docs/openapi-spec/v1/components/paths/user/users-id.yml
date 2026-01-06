@@ -31,7 +31,7 @@ patch:
   security:
     - BearerToken: []
   tags: [ user ]
-  operationId:  usersIdPatch
+  operationId:  updateUser
   parameters:
     - in: path
       name: id
@@ -53,6 +53,29 @@ patch:
         application/json:
           schema:
             $ref: '../../schemas/user/response.yml#/UserResponse'
+    default:
+      description: Unexpected error
+      content:
+        application/json:
+          schema:
+            $ref: '../../schemas/common/response.yml#/Error'
+delete:
+  summary: Deletes a user
+  description: Deletes a user
+  security:
+    - BearerToken: []
+  tags: [ user ]
+  operationId:  deleteUser
+  parameters:
+    - in: path
+      name: id
+      required: true
+      schema:
+        type: string
+        format: uuid
+  responses:
+    '204':
+      description: OK
     default:
       description: Unexpected error
       content:

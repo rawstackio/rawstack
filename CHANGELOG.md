@@ -72,4 +72,39 @@ This is a **mobile alpha**. Expect UI iteration and architectural refinement as 
 
 For setup instructions, see `apps/app/README.md`.
 
+## [v0.1.0-alpha.3] - 2026-01-09
+### 🚀 Overview
+This alpha expands the RawStack platform beyond the API and mobile app by introducing **API versioning**, the initial **Admin Dashboard**, and the **public website**.
+
+The focus of this release is platform structure and lifecycle concerns — establishing versioned APIs, administrative interfaces, and a public-facing web presence to support real-world usage and future growth.
+
+### ✨ Added
+- **API versioning** support in the RawStack API Core
+    - Versioned routing and structure to support backward compatibility
+- **Admin dashboard** (`apps/admin`)
+    - Initial layout and navigation
+    - Foundation for managing users
+- **Public website** (`apps/web`)
+    - User flows
+### 🧱 Scope
+Included in this release:
+- `apps/api` — RawStack API Core (with versioning)
+- `apps/app` — RawStack Mobile App
+- `apps/admin` — Admin Dashboard *(new)*
+- `apps/web` — Public Website *(new)*
+
+Coming in future alphas:
+- `infra/` — Deployment & infrastructure configuration
+- Expanded admin and web functionality
+
+### ⚙️ Notes
+This is a **platform alpha**.  
+API versioning is expected to evolve, and both the admin dashboard and website are early foundations that will be iterated on significantly in upcoming releases.
+
+For setup instructions, see:
+- `apps/api/README.md`
+- `apps/admin/README.md`
+- `apps/web/README.md`
+
+
 

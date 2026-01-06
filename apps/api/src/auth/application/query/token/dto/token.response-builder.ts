@@ -8,6 +8,7 @@ import { ItemResponseDtoInterface } from '~/common/application/query/dto/item-re
 import { TokenHashRepositoryInterface } from '~/auth/domain/model/token/token-hash-repository.interface';
 import { EntityNotFoundException } from '~/common/domain/exception/entity-not-found.exception';
 import { TokenModel } from '~/auth/domain/model/token/token.model';
+import { Id } from "~/common/domain/model/value-object/id";
 
 @Injectable()
 export class TokenResponseBuilder {
@@ -27,7 +28,7 @@ export class TokenResponseBuilder {
 
     let token: TokenModel;
     try {
-      token = await this.repository.findById(id);
+      token = await this.repository.findById(new Id(id));
     } catch (error: unknown) {
       if (error instanceof EntityNotFoundException) {
         return actionResponse;
@@ -42,7 +43,7 @@ export class TokenResponseBuilder {
     const accessTokenTtlSeconds = this.config.get<number>('ACCESS_TOKEN_TTL')!;
     const accessTokenExpiresAt = dayjs().add(accessTokenTtlSeconds, 'seconds');
 
-    const payload = { sub: token.userId, email };
+    const payload = { sub: token.userId.toString(), email };
     const secret = this.config.get('JWT_SECRET');
     const accessToken = await this.jwt.signAsync(payload, {
       expiresIn: this.config.get('ACCESS_TOKEN_TTL') * 1,

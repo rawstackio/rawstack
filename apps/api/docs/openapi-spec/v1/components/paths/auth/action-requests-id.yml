@@ -1,0 +1,23 @@
+get:
+  summary: Returns an Auth Action Request
+  tags: [ authentication ]
+  operationId: getActionRequest
+  parameters:
+    - in: path
+      name: requestId
+      required: true
+      schema:
+        type: string
+  responses:
+    '200':
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: '../../schemas/auth/action-request/response.yml#/ActionRequestResponse'
+    default:
+      description: Unexpected error
+      content:
+        application/json:
+          schema:
+            $ref: '../../schemas/common/response.yml#/Error'

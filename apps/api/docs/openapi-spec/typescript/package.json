@@ -1,11 +1,12 @@
 {
   "name": "@rawstack/api-client",
-  "version": "v0.1.0-alpha.2",
+  "version": "v0.1.0-alpha.3",
   "description": "openapi client for the rawstack api",
   "author": "dan byrne",
   "private": true,
   "keywords": [
     "typescript",
+    "swagger-client",
     "@rawstack/api-client"
   ],
   "license": "Unlicense",
@@ -15,7 +16,8 @@
     "build": "tsc --skipLibCheck"
   },
   "dependencies": {
-    "axios": "^1.7.7"
+    "axios": "^1.7.7",
+    "async-mutex": "^0.5.0"
   },
   "devDependencies": {
     "typescript": "*"

@@ -11,3 +11,10 @@ AuthTokenPostRequest:
     refreshToken:
       type: string
       format: uuid
+    role:
+      type: string
+      enum: [ADMIN]
+      description: Optional role to assign during token creation (only ADMIN role is supported)
+    invalidateTokens:
+      type: boolean
+      description: If true, invalidates all existing tokens for this user before creating a new one

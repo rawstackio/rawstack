@@ -1,8 +1,15 @@
 {
   "name": "rawstack-api-core",
-  "version": "v0.1.0-alpha.2",
+  "version": "v0.1.0-alpha.3",
   "description": "RawStack core API (NestJS + Prisma). Open-source, self-hosted foundation for the RawStack suite.",
-  "keywords": ["rawstack", "nestjs", "api", "prisma", "cqrs", "self-hosted"],
+  "keywords": [
+    "rawstack",
+    "nestjs",
+    "api",
+    "prisma",
+    "cqrs",
+    "self-hosted"
+  ],
   "author": "Dan Byrne",
   "license": "MIT",
   "private": true,
@@ -34,8 +41,8 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:e2e": "jest test/e2e --config jest-e2e.config.js",
-    "test:e2e:debug": "node --inspect -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest test/e2e --config jest-e2e.config.js --runInBand",
-    "test:unit": "jest test/unit --config jest.config.js"
+    "test:unit": "jest test/unit --config jest.config.js",
+    "test:integration": "jest test/integration --config jest-integration.config.js"
   },
   "dependencies": {
     "@aws-sdk/client-eventbridge": "^3.821.0",
@@ -51,13 +58,13 @@
     "dayjs": "^1.11.13",
     "ioredis": "^5.6.1",
     "nest-commander": "^3.17.0",
-    "nestjs-zod": "^4.3.1",
+    "nestjs-zod": "^5.0.1",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "prisma": "6.12.0",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.2",
-    "zod": "^3.25.42"
+    "zod": "^4.1.13"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.0.0",

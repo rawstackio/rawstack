@@ -1,14 +1,14 @@
-UserPostRequest: # @TODO" consistent naming
+UserPostRequest:
   type: object
   required:
     - email
-    - password
   properties:
     email:
       type: string
       format: email
     password:
       type: string
+      description: Optional password. If not provided, admin users can create the user with a random password.
 UpdateUserRequest:
   type: object
   properties:
@@ -17,3 +17,9 @@ UpdateUserRequest:
       format: email
     password:
       type: string
+    roles:
+      type: array
+      description: Array of roles to assign to the user (ADMIN or VERIFIED_USER)
+      items:
+        type: string
+        enum: [ADMIN, VERIFIED_USER]

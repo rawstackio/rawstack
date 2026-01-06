@@ -3,7 +3,8 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 import { PassportStrategy } from '@nestjs/passport';
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { LoggedInUser } from '../../../domain/logged-in-user';
-import UserDtoProvider from '../../../application/query/user/user.dto-provider';
+import { UserDtoProvider } from '../../../application/query/user/user.dto-provider';
+import { Id } from "~/common/domain/model/value-object/id";
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
@@ -27,11 +28,11 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
 
     const store = this.als.getStore();
     if (store) {
-      store.actor = { id: user.id, roles: user.roles };
+      store.actor = { id: new Id(user.id), roles: user.roles };
     }
 
     return {
-      id: user.id,
+      id: new Id(user.id),
       roles: user.roles,
     };
   }

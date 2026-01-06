@@ -5,11 +5,12 @@ import { CqrsModule } from '@nestjs/cqrs';
 import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
 import { CommonModule } from './common/common.module';
-import { ZodValidationPipe } from 'nestjs-zod';
-import { APP_PIPE } from '@nestjs/core';
+import { ZodSerializerInterceptor, ZodValidationPipe } from 'nestjs-zod';
+import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
 import { LoggedInUser } from './common/domain/logged-in-user';
 import { randomUUID } from 'crypto';
 import { NextFunction, Request } from 'express';
+import { GlobalHttpExceptionFilter } from '~/common/infrastructure/exception/global-http.exception-filter';
 
 @Module({
   imports: [
@@ -26,6 +27,14 @@ import { NextFunction, Request } from 'express';
     {
       provide: APP_PIPE,
       useClass: ZodValidationPipe,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: ZodSerializerInterceptor,
+    },
+    {
+      provide: APP_FILTER,
+      useClass: GlobalHttpExceptionFilter,
     },
   ],
 })

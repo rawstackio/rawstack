@@ -3,6 +3,7 @@ import { CreateActionRequestCommand } from '~/auth/application/command/action-re
 import { CreateActionRequestService } from '~/auth/domain/service/action-request/create-action-request.service';
 import { VerifyAndUseTokenService } from '~/auth/domain/service/token/verify-and-use-token.service';
 import { ExtractActionRequestDataService } from '~/auth/domain/service/action-request/extract-action-request-data.service';
+import { Id } from '~/common/domain/model/value-object/id'
 
 @CommandHandler(CreateActionRequestCommand)
 export class CreateActionRequestCommandHandler implements ICommandHandler<CreateActionRequestCommand> {
@@ -16,10 +17,18 @@ export class CreateActionRequestCommandHandler implements ICommandHandler<Create
     // verify and convert the token into an action request
     const data = await this.extract.invoke(command.token);
 
+    const tokenId = data.data.tokenId;
+
     // verify and use the token
-    await this.tokenService.invoke(data.data.tokenId, data.data.userId);
+    await this.tokenService.invoke(tokenId, data.data.userId);
 
     // persist the action request
-    await this.actionService.invoke(command.id, data.action, data.data);
+    await this.actionService.invoke(
+      new Id(command.id),
+      data.action,
+      tokenId,
+      data.data.userId,
+      data.data.email
+    );
   }
 }

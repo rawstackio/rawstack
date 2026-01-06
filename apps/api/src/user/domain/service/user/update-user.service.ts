@@ -6,13 +6,15 @@ import { LoggedInUser } from '~/common/domain/logged-in-user';
 import { ForbiddenException } from '~/common/domain/exception/forbidden.exception';
 import { ValidationException } from '~/common/domain/exception/validation.exception';
 import { ConflictException } from '~/common/domain/exception/conflict.exception';
+import { Email } from '~/common/domain/model/value-object/email';
+import { Id } from '~/common/domain/model/value-object/id';
 
 export class UpdateUserService {
   constructor(private repository: UserRepositoryInterface) {}
 
-  async invoke(actor: LoggedInUser, id: string, email?: string, password?: string, roles?: UserRoles[]): Promise<void> {
-    if (actor.id !== id && !actor.roles.includes(UserRoles.Admin)) {
-      throw new ForbiddenException(`actor ${actor.id} is not allowed to update user ${id}`);
+  async invoke(actor: LoggedInUser, id: Id, email?: Email, password?: string, roles?: UserRoles[]): Promise<void> {
+    if (!actor.id.equals(id) && !actor.roles.includes(UserRoles.Admin)) {
+      throw new ForbiddenException(`actor ${actor.id} is not allowed to update user ${id.toString()}`);
     }
 
     if (!email && !password && !roles) {
@@ -22,10 +24,10 @@ export class UpdateUserService {
     const user = await this.repository.findById(id);
     const dateNow = dayjs();
 
-    if (email && email !== user.email) {
+    if (email && !email.equals(user.email)) {
       const existing = await this.repository.existsByEmail(email);
       if (existing) {
-        throw new ConflictException(`email ${email} already exists`);
+        throw new ConflictException(`email ${email.toString()} already exists`);
       }
       user.setUnverifiedEmail(dateNow, email);
     }
@@ -35,7 +37,7 @@ export class UpdateUserService {
         throw new ForbiddenException('only admins can update users roles');
       }
 
-      user.updateRoles(dateNow, roles);
+      user.addRoles(dateNow, roles);
     }
     if (password) {
       const hashedPassword = await argon.hash(password);

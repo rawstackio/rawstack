@@ -87,9 +87,17 @@ The API will be available at:
 ➡️ http://localhost:3000
 
 ### 🧪 Run Tests
+
+Before running tests, ensure test database and Redis are running:
 ```bash
-npm test:unit
-npm test:e2e
+docker compose up -d db_test redis_test
+```
+
+Run different test suites:
+```bash
+npm run test:unit         # Unit tests
+npm run test:integration  # Integration tests
+npm run test:e2e          # End-to-end tests
 ```
 
 ## 📄 License

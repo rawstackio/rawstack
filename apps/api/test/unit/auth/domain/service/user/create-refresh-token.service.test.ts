@@ -1,4 +1,6 @@
 import * as dayjs from 'dayjs';
+import { Id } from '~/common/domain/model/value-object/id';
+import { Email } from '~/common/domain/model/value-object/email';
 import { createHash, randomUUID } from 'crypto';
 import { CreateRefreshTokenService } from '~/auth/domain/service/token/create-refresh-token.service';
 import { TokenRepositoryInterface } from '~/auth/domain/model/token/token-repository.interface';
@@ -42,8 +44,8 @@ describe('CreateRefreshTokenService', () => {
   it('throws exception if user not found', async () => {
     mockRepository.findTokenUserByEmail.mockRejectedValue(new EntityNotFoundException('No user here'));
 
-    const id = randomUUID();
-    const email = 'test@rawstack.io';
+    const id = Id.create();
+    const email = new Email('test@rawstack.io');
     const password = 'test123ABC;';
 
     await expect(service.invoke(id, email, password, undefined, undefined)).rejects.toThrow(UnauthorizedException);
@@ -54,20 +56,20 @@ describe('CreateRefreshTokenService', () => {
   describe('from password', () => {
     it('creates a token for a valid password', async () => {
       const mockUser = {
-        id: '123',
+        id: new Id(randomUUID()),
         hash: 'hashedPassword',
-      } as unknown as { hash: string; id: string };
+      } as unknown as { hash: string; id: Id };
 
       const mockToken = {
-        id: '456',
+        id: new Id(randomUUID()),
       } as unknown as TokenModel;
 
       mockRepository.findTokenUserByEmail.mockResolvedValue(mockUser);
       (argon2.verify as jest.Mock).mockResolvedValue(true);
       jest.spyOn(TokenModel, 'create').mockReturnValue(mockToken);
 
-      const id = randomUUID();
-      const email = 'test@rawstack.io';
+      const id = Id.create();
+      const email = new Email('test@rawstack.io');
       const password = 'test123ABC;';
 
       await service.invoke(id, email, password, undefined, undefined);
@@ -75,10 +77,10 @@ describe('CreateRefreshTokenService', () => {
       expect(mockRepository.findTokenUserByEmail).toHaveBeenCalledWith(email, undefined);
       expect(argon2.verify).toHaveBeenCalledWith(mockUser.hash, password);
       expect(TokenModel.create).toHaveBeenCalledWith(
-        id,
+        expect.any(Id),
         expect.any(String),
-        mockUser.id,
-        expect.any(String),
+        expect.any(Id),
+        expect.any(Id),
         expect.any(dayjs),
         expect.any(dayjs),
         'LOGIN',
@@ -89,15 +91,15 @@ describe('CreateRefreshTokenService', () => {
 
     it('throws exception if passwords do not match', async () => {
       const mockUser = {
-        id: '123',
+        id: new Id(randomUUID()),
         hash: 'hashedPassword',
-      } as unknown as { hash: string; id: string };
+      } as unknown as { hash: string; id: Id };
 
       mockRepository.findTokenUserByEmail.mockResolvedValue(mockUser);
       (argon2.verify as jest.Mock).mockResolvedValue(false);
 
-      const id = randomUUID();
-      const email = 'test@rawstack.io';
+      const id = Id.create();
+      const email = new Email('test@rawstack.io');
       const password = 'test123ABC;';
 
       await expect(service.invoke(id, email, password, undefined, undefined)).rejects.toThrow(UnauthorizedException);
@@ -110,26 +112,26 @@ describe('CreateRefreshTokenService', () => {
   describe('from refresh token', () => {
     it('creates a token for a valid refresh token', async () => {
       const mockUser = {
-        id: '123',
+        id: new Id(randomUUID()),
         hash: 'hashedPassword',
-      } as unknown as { hash: string; id: string };
+      } as unknown as { hash: string; id: Id };
 
       const mockParentToken = {
-        id: '456',
-        rootTokenId: '789',
+        id: randomUUID(),
+        rootTokenId: randomUUID(),
         usedAt: undefined,
         isValid: jest.fn().mockReturnValue(true),
         use: jest.fn(),
       } as unknown as TokenModel;
 
       const mockToken = {
-        id: 'abc',
+        id: randomUUID(),
       } as unknown as TokenModel;
 
-      const id = randomUUID();
+      const id = Id.create();
       const refresh = randomUUID();
       const refreshHash = createHash('sha256').update(refresh, 'utf8').digest('hex');
-      const email = 'test@rawstack.io';
+      const email = new Email('test@rawstack.io');
 
       mockRepository.findTokenUserByEmail.mockResolvedValue(mockUser);
       mockRepository.findByTokenHash.mockResolvedValue(mockParentToken);
@@ -142,10 +144,10 @@ describe('CreateRefreshTokenService', () => {
       expect(mockParentToken.use).toHaveBeenCalled();
       expect(mockParentToken.isValid).toHaveBeenCalled();
       expect(TokenModel.create).toHaveBeenCalledWith(
-        id,
+        expect.any(Id),
         expect.any(String),
-        mockUser.id,
-        mockParentToken.rootTokenId,
+        expect.any(Id),
+        expect.any(Id),
         expect.any(dayjs),
         expect.any(dayjs),
         'LOGIN',
@@ -156,14 +158,14 @@ describe('CreateRefreshTokenService', () => {
 
     it('throws exception for invalid token hash', async () => {
       const mockUser = {
-        id: '123',
+        id: Id.create(),
         hash: 'hashedPassword',
-      } as unknown as { hash: string; id: string };
+      } as unknown as { hash: string; id: Id };
 
-      const id = randomUUID();
+      const id = Id.create();
       const refresh = randomUUID();
       const refreshHash = createHash('sha256').update(refresh, 'utf8').digest('hex');
-      const email = 'test@rawstack.io';
+      const email = new Email('test@rawstack.io');
 
       mockRepository.findTokenUserByEmail.mockResolvedValue(mockUser);
       mockRepository.findByTokenHash.mockRejectedValue(new EntityNotFoundException('No token found for the hash'));
@@ -176,22 +178,22 @@ describe('CreateRefreshTokenService', () => {
 
     it('throws exception for invalid token', async () => {
       const mockUser = {
-        id: '123',
+        id: new Id(randomUUID()),
         hash: 'hashedPassword',
-      } as unknown as { hash: string; id: string };
+      } as unknown as { hash: string; id: Id };
 
       const mockParentToken = {
-        id: '456',
-        rootTokenId: '789',
+        id: randomUUID(),
+        rootTokenId: randomUUID(),
         usedAt: undefined,
         isValid: jest.fn().mockReturnValue(false),
         use: jest.fn(),
       } as unknown as TokenModel;
 
-      const id = randomUUID();
+      const id = Id.create();
       const refresh = randomUUID();
       const refreshHash = createHash('sha256').update(refresh, 'utf8').digest('hex');
-      const email = 'test@rawstack.io';
+      const email = new Email('test@rawstack.io');
 
       mockRepository.findTokenUserByEmail.mockResolvedValue(mockUser);
       mockRepository.findByTokenHash.mockResolvedValue(mockParentToken);
@@ -206,22 +208,22 @@ describe('CreateRefreshTokenService', () => {
 
     it('throws exception and deletes the token chain for a used token', async () => {
       const mockUser = {
-        id: '123',
+        id: new Id(randomUUID()),
         hash: 'hashedPassword',
-      } as unknown as { hash: string; id: string };
+      } as unknown as { hash: string; id: Id};
 
       const mockParentToken = {
-        id: '456',
-        rootTokenId: '789',
+        id: new Id(randomUUID()),
+        rootTokenId: randomUUID(),
         usedAt: dayjs(),
         isValid: jest.fn().mockReturnValue(true),
         use: jest.fn(),
       } as unknown as TokenModel;
 
-      const id = randomUUID();
+      const id = new Id(randomUUID());
       const refresh = randomUUID();
       const refreshHash = createHash('sha256').update(refresh, 'utf8').digest('hex');
-      const email = 'test@rawstack.io';
+      const email = new Email('test@rawstack.io');
 
       mockRepository.findTokenUserByEmail.mockResolvedValue(mockUser);
       mockRepository.findByTokenHash.mockResolvedValue(mockParentToken);

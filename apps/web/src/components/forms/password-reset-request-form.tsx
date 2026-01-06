@@ -1,0 +1,83 @@
+'use client'
+
+import { toast } from "sonner"
+import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import Link from "next/link";
+import { useState } from "react";
+import { SubmitHandler, useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import Api from "@/lib/api/Api";
+
+const schema = z.object({
+  email: z.string().email("Invalid email address").min(1, "Email is required"),
+})
+
+type Inputs = z.infer<typeof schema>
+
+export function PasswordResetRequestForm({
+  className,
+  ...props
+}: React.ComponentProps<"div">) {
+  const [isBusy, setIsBusy] = useState(false);
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<Inputs>({ resolver: zodResolver(schema) });
+
+  const onSubmit: SubmitHandler<Inputs> = async (data) => {
+    setIsBusy(true);
+
+    try {
+      const response = await Api.auth.createToken({
+        email: data.email.toLowerCase(),
+      });
+      const item = response.data.item;
+
+      if ('action' in item && item.action === 'CHECK_EMAIL') {
+        toast("A password reset link has been sent to your email address")
+      }
+
+      setIsBusy(false);
+    } catch (e) {
+      toast.error('Something went wrong! Try again later!');
+      setIsBusy(false);
+    }
+  }
+
+  return (
+    <div className={cn("flex flex-col gap-6", className)} {...props}>
+      <form onSubmit={handleSubmit(onSubmit)}>
+        <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-3">
+            <div className="grid gap-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                  {...register("email", { required: true })}
+                id="email"
+                type="email"
+                placeholder="hi@rawstack.io"
+              />
+              {errors.email && <span className="text-sm text-destructive">{errors.email.message}</span>}
+            </div>
+            <div className="grid gap-2 mt-2">
+              <Button type="submit" className="w-full" disabled={isBusy}>
+                Reset Password
+              </Button>
+            </div>
+          </div>
+        </div>
+      </form>
+      <div className="text-center text-sm">
+        Already have an account?{" "}
+        <Link href={"/login"} className="underline underline-offset-4">
+          Login
+        </Link>
+      </div>
+    </div>
+  )
+}

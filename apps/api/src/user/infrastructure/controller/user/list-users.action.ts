@@ -13,7 +13,7 @@ export class ListUsersAction {
   @UseGuards(JwtGuard, AdminGuard)
   @Get()
   async invoke(@Query() query: ListUsersQueryParamsDto): Promise<UserCollectionResponseDto> {
-    const listQuery = new ListUsersQuery(query.page, query.perPage, query.q);
+    const listQuery = ListUsersQuery.fromQuery(query);
     return await this.queryBus.execute(listQuery);
   }
 }

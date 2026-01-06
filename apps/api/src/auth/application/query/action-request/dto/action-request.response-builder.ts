@@ -12,7 +12,7 @@ export class ActionRequestResponseBuilder {
 
     return {
       item: {
-        id: item.id,
+        id: item.id.toString(),
         action: item.action,
         status: item.status,
       },

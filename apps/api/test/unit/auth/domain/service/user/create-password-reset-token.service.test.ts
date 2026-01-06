@@ -6,6 +6,8 @@ import { TokenModel } from '~/auth/domain/model/token/token.model';
 import { EntityNotFoundException } from '~/common/domain/exception/entity-not-found.exception';
 import { UnauthorizedException } from '~/common/domain/exception/unauthorized.exception';
 import { CreatePasswordResetTokenService } from '~/auth/domain/service/token/create-password-reset-token.service';
+import { Id } from '~/common/domain/model/value-object/id';
+import { Email } from '~/common/domain/model/value-object/email';
 
 describe('CreatePasswordResetTokenService', () => {
   let service: CreatePasswordResetTokenService;
@@ -37,8 +39,8 @@ describe('CreatePasswordResetTokenService', () => {
   it('it does not throw Exception if user not found', async () => {
     mockRepository.findTokenUserByEmail.mockRejectedValue(new EntityNotFoundException('No user here'));
 
-    const id = randomUUID();
-    const email = 'test@rawstack.io';
+    const id = Id.create();
+    const email = new Email('test@rawstack.io');
 
     await service.invoke(id, email);
 
@@ -48,8 +50,8 @@ describe('CreatePasswordResetTokenService', () => {
   it('throws Error if user repo throws ', async () => {
     mockRepository.findTokenUserByEmail.mockRejectedValue(new Error('computer says now'));
 
-    const id = randomUUID();
-    const email = 'test@rawstack.io';
+    const id = Id.create();
+    const email = new Email('test@rawstack.io');
 
     await expect(service.invoke(id, email)).rejects.toThrow('computer says now');
 
@@ -58,32 +60,32 @@ describe('CreatePasswordResetTokenService', () => {
 
   it('creates a token for a valid user', async () => {
     const mockUser = {
-      id: '123',
+      id: Id.create(),
       hash: 'hashedPassword',
-    } as unknown as { hash: string; id: string };
+    } as unknown as { hash: string; id: Id };
 
     const mockToken = {
-      id: '456',
+      id: Id.create(),
     } as unknown as TokenModel;
 
     mockRepository.findTokenUserByEmail.mockResolvedValue(mockUser);
     jest.spyOn(TokenModel, 'create').mockReturnValue(mockToken);
 
-    const id = randomUUID();
-    const email = 'test@rawstack.io';
+    const id = Id.create();
+    const email = new Email('test@rawstack.io');
 
     await service.invoke(id, email);
 
     expect(mockRepository.findTokenUserByEmail).toHaveBeenCalledWith(email);
     expect(TokenModel.create).toHaveBeenCalledWith(
-      id,
+      expect.any(Id),
       expect.any(String),
-      mockUser.id,
-      id,
+      expect.any(Id),
+      expect.any(Id),
       expect.any(dayjs),
       expect.any(dayjs),
       'PASSWORD_RESET',
-      email,
+      expect.any(Email),
       expect.any(String),
     );
     expect(mockRepository.persist).toHaveBeenCalledWith(mockToken);

@@ -5,6 +5,8 @@ import { LoggedInUser } from '~/common/domain/logged-in-user';
 import { ForbiddenException } from '~/common/domain/exception/forbidden.exception';
 import { UpdateUserService } from '~/user/domain/service/user/update-user.service';
 import { ValidationException } from '~/common/domain/exception/validation.exception';
+import { Id } from '~/common/domain/model/value-object/id';
+import { Email } from '~/common/domain/model/value-object/email';
 
 describe('UpdateUserService', () => {
   let service: UpdateUserService;
@@ -14,6 +16,7 @@ describe('UpdateUserService', () => {
   beforeEach(async () => {
     mockUser = {
       id: 123,
+      email: { equals: jest.fn().mockReturnValue(false) },
       setUnverifiedEmail: jest.fn(),
       updatePassword: jest.fn(),
     };
@@ -28,21 +31,21 @@ describe('UpdateUserService', () => {
   });
 
   it('updates own email via setUnverifiedEmail', async () => {
-    const id = randomUUID();
+    const id = Id.create();
     const actor = new LoggedInUser(id, []);
 
     mockRepository.findById.mockResolvedValue(mockUser);
 
     const email = 'hi@rawstack.io';
 
-    await service.invoke(actor, id, email);
+    await service.invoke(actor, id, new Email(email));
 
     expect(mockRepository.persist).toHaveBeenCalledWith(mockUser);
-    expect(mockUser.setUnverifiedEmail).toHaveBeenCalledWith(expect.any(dayjs), email);
+    expect(mockUser.setUnverifiedEmail).toHaveBeenCalledWith(expect.any(dayjs), expect.any(Email));
   });
 
   it('can update own password', async () => {
-    const id = randomUUID();
+    const id = Id.create();
     const actor = new LoggedInUser(id, []);
 
     mockRepository.findById.mockResolvedValue(mockUser);
@@ -57,8 +60,8 @@ describe('UpdateUserService', () => {
   });
 
   it('throws error if no values provided', async () => {
-    const actorId = randomUUID();
-    const id = randomUUID();
+    const actorId = Id.create();
+    const id = Id.create();
     const actor = new LoggedInUser(actorId, ['ADMIN']);
 
     mockRepository.findById.mockResolvedValue(mockUser);
@@ -69,27 +72,27 @@ describe('UpdateUserService', () => {
   });
 
   it('cannot update another user', async () => {
-    const actorId = randomUUID();
-    const id = randomUUID();
+    const actorId = Id.create();
+    const id = Id.create();
     const actor = new LoggedInUser(actorId, []);
     const email = 'hi@rawstack.io';
 
     mockRepository.findById.mockResolvedValue(mockUser);
 
-    await expect(service.invoke(actor, id, email)).rejects.toThrow(ForbiddenException);
+    await expect(service.invoke(actor, id, new Email(email))).rejects.toThrow(ForbiddenException);
 
     expect(mockRepository.persist).not.toHaveBeenCalledWith(mockUser);
   });
 
   it('admins can update users', async () => {
-    const actorId = randomUUID();
-    const id = randomUUID();
+    const actorId = Id.create();
+    const id = Id.create();
     const actor = new LoggedInUser(actorId, ['ADMIN']);
     const email = 'hi@rawstack.io';
 
     mockRepository.findById.mockResolvedValue(mockUser);
 
-    await service.invoke(actor, id, email);
+    await service.invoke(actor, id, new Email(email));
 
     expect(mockRepository.persist).toHaveBeenCalledWith(mockUser);
   });

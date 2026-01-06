@@ -1,4 +1,5 @@
 import { CanActivate, ExecutionContext, Injectable, mixin, Type } from '@nestjs/common';
+import { LoggedInUser } from '~/common/domain/logged-in-user';
 
 type UserUserGuardOptions = {
   action: string;
@@ -12,7 +13,7 @@ export const UserUserGuard = (options: UserUserGuardOptions): Type<CanActivate> 
   class UserUserGuardMixin implements CanActivate {
     canActivate(context: ExecutionContext): boolean {
       const request = context.switchToHttp().getRequest();
-      const user = request.user;
+      const user: LoggedInUser = request.user;
       const userId = userIdFrom(request);
 
       if (!user || !userId) {
@@ -26,7 +27,7 @@ export const UserUserGuard = (options: UserUserGuardOptions): Type<CanActivate> 
       switch (action) {
         case 'UPDATE_USER':
         case 'DELETE_USER':
-          return user.id === userId;
+          return user.id.toString() === userId;
         default:
           return false;
       }

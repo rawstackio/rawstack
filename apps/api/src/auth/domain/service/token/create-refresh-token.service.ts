@@ -6,8 +6,10 @@ import { TokenModel, TokenModelType } from '../../model/token/token.model';
 import { EntityNotFoundException } from '~/common/domain/exception/entity-not-found.exception';
 import { TokenHashRepositoryInterface } from '~/auth/domain/model/token/token-hash-repository.interface';
 import { UnauthorizedException } from '~/common/domain/exception/unauthorized.exception';
+import { Id } from '~/common/domain/model/value-object/id';
+import { Email } from '~/common/domain/model/value-object/email';
 
-type TokenUser = { hash: string; id: string };
+type TokenUser = { hash: string; id: Id };
 
 export class CreateRefreshTokenService {
   constructor(
@@ -16,7 +18,7 @@ export class CreateRefreshTokenService {
     private readonly refreshTokenTtlSeconds: number,
   ) {}
 
-  async invoke(id: string, email: string, password?: string, refreshToken?: string, role?: string): Promise<void> {
+  async invoke(id: Id, email: Email, password?: string, refreshToken?: string, role?: string): Promise<void> {
     let user: TokenUser;
     const type = 'LOGIN';
     let rootTokenId = undefined;

@@ -13,7 +13,7 @@ export class GetCurrentUserAction {
   @UseGuards(JwtGuard)
   @Get('current')
   async invoke(@User() user: LoggedInUser): Promise<UserResponseDto> {
-    const query = new GetUserQuery(user.id);
+    const query = new GetUserQuery(user.id.toString());
 
     return await this.queryBus.execute(query);
   }

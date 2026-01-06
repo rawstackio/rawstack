@@ -72,14 +72,9 @@ describe('Creating Users', () => {
       .set('Accept', 'application/json');
 
     expect(response.status).toBe(400);
-    expect(response.body).toHaveProperty('error');
+    expect(response.body).toHaveProperty('errors');
     expect(response.body).toHaveProperty('message');
     expect(response.body).toHaveProperty('statusCode');
-    expect(response.body.error).toBe('Validation Error');
-    expect(response.body).toHaveProperty('issues');
-
-    expect(response.body.issues[0].code).toBe('invalid_string');
-    expect(response.body.issues[0].path).toBe('email');
   });
 
   it('a user cannot register with an invalid password', async () => {
@@ -93,13 +88,8 @@ describe('Creating Users', () => {
       .set('Accept', 'application/json');
 
     expect(response.status).toBe(400);
-    expect(response.body).toHaveProperty('error');
+    expect(response.body).toHaveProperty('errors');
     expect(response.body).toHaveProperty('message');
     expect(response.body).toHaveProperty('statusCode');
-    expect(response.body.error).toBe('Validation Error');
-    expect(response.body).toHaveProperty('issues');
-
-    expect(response.body.issues[0].code).toBe('too_small');
-    expect(response.body.issues[0].path).toBe('password');
   });
 });

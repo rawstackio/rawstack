@@ -61,7 +61,7 @@ describe('email updating', () => {
     const accessToken = tokens.accessToken;
 
     const updateUserResponse = await request(app.getHttpServer())
-      .patch('/user/users/' + user1.id)
+      .patch('/user/users/' + user1.id.toString())
       .send({
         email: updatedUser1Email,
       })
@@ -74,7 +74,7 @@ describe('email updating', () => {
     expect(updateUserResponse.status).toBe(200);
     expect(updateUserResponse.body).toHaveProperty('item');
 
-    expect(updateUserResponse.body.item.id).toBe(user1.id);
+    expect(updateUserResponse.body.item.id).toBe(user1.id.toString());
     expect(updateUserResponse.body.item.email).toBe(user1Email);
     expect(updateUserResponse.body.item.unverifiedEmail).toBe(updatedUser1Email);
     expect(updateUserResponse.body.item.roles).toEqual([]);
@@ -83,7 +83,8 @@ describe('email updating', () => {
 
     const firstEvent = events.filter((event) => {
       return (
-        event.DetailType === 'user.user.unverifiedEmailWasSet' && JSON.parse(event.Detail).aggregateId === user1.id
+        event.DetailType === 'user.user.unverifiedEmailWasSet' &&
+        JSON.parse(event.Detail).aggregateId === user1.id.toString()
       );
     })[0];
 
@@ -91,7 +92,7 @@ describe('email updating', () => {
     expect(firstEvent.DetailType).toBe('user.user.unverifiedEmailWasSet');
 
     const firstEventDetail = JSON.parse(firstEvent.Detail);
-    expect(firstEventDetail.aggregateId).toBe(user1.id);
+    expect(firstEventDetail.aggregateId).toBe(user1.id.toString());
     expect(firstEventDetail.entity.email).toBe(user1Email);
     expect(firstEventDetail.entity.unverifiedEmail).toBe(updatedUser1Email);
     expect(firstEventDetail.data.unverifiedEmail).toBe(updatedUser1Email);
@@ -100,7 +101,7 @@ describe('email updating', () => {
       const detail = JSON.parse(event.Detail);
       return (
         event.DetailType === 'auth.token.wasCreated' &&
-        detail.data.userId === user1.id &&
+        detail.data.userId === user1.id.toString() &&
         detail.data.type === 'EMAIL_VERIFICATION'
       );
     })[0];
@@ -109,7 +110,7 @@ describe('email updating', () => {
     expect(secondEvent.DetailType).toBe('auth.token.wasCreated');
 
     const secondEventDetail = JSON.parse(secondEvent.Detail);
-    expect(secondEventDetail.data.userId).toBe(user1.id);
+    expect(secondEventDetail.data.userId).toBe(user1.id.toString());
     expect(secondEventDetail.data.type).toBe('EMAIL_VERIFICATION');
     expect(secondEventDetail.data.email).toBe(updatedUser1Email);
     expect(secondEventDetail.data.token).toBeDefined();
@@ -125,7 +126,7 @@ describe('email updating', () => {
     const decodedPayload = JSON.parse(Buffer.from(tokenParts[1], 'base64').toString());
     expect(decodedPayload.type).toBe('EMAIL_VERIFICATION');
     expect(decodedPayload.id).toBeDefined();
-    expect(decodedPayload.userId).toBe(user1.id);
+    expect(decodedPayload.userId).toBe(user1.id.toString());
     expect(decodedPayload.email).toBe(updatedUser1Email);
 
     // test that the verification token can be used to verify the email
@@ -155,8 +156,6 @@ describe('email updating', () => {
     expect(getUserResponse.body.item.email).toBe(updatedUser1Email);
     expect(getUserResponse.body.item.unverifiedEmail).toBeUndefined();
     expect(getUserResponse.body.item.roles.includes('VERIFIED_USER')).toBe(true);
-
-    // @todo: check the token action has been marked as completed
   });
 
   test('a user cannot update to an existing email', async () => {
@@ -164,7 +163,7 @@ describe('email updating', () => {
     const accessToken = tokens.accessToken;
 
     const updateUserResponse = await request(app.getHttpServer())
-      .patch('/user/users/' + user2.id)
+      .patch('/user/users/' + user2.id.toString())
       .send({
         email: existingUserEmail,
       })
@@ -180,7 +179,7 @@ describe('email updating', () => {
     const accessToken = tokens.accessToken;
 
     const updateUserResponse = await request(app.getHttpServer())
-      .patch('/user/users/' + user3.id)
+      .patch('/user/users/' + user3.id.toString())
       .send({
         email: updatedUser3Email,
       })
@@ -193,14 +192,12 @@ describe('email updating', () => {
     await new Promise((resolve) => setTimeout(resolve, 500));
 
     const events = eventAdaptor.getEvents();
-    // expect(events.length).toBe(2);
 
-    // const secondEvent = events[1];
     const secondEvent = events.filter((event) => {
       const detail = JSON.parse(event.Detail);
       return (
         event.DetailType === 'auth.token.wasCreated' &&
-        detail.data.userId === user3.id &&
+        detail.data.userId === user3.id.toString() &&
         detail.data.type === 'EMAIL_VERIFICATION'
       );
     })[0];

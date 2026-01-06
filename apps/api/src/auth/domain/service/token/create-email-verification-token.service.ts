@@ -2,6 +2,8 @@ import * as dayjs from 'dayjs';
 import { TokenRepositoryInterface } from '../../model/token/token-repository.interface';
 import { TokenModel } from '~/auth/domain/model/token/token.model';
 import { createHash, randomUUID } from 'crypto';
+import { Id } from '~/common/domain/model/value-object/id';
+import { Email } from '~/common/domain/model/value-object/email';
 
 export class CreateEmailVerificationTokenService {
   constructor(
@@ -9,7 +11,7 @@ export class CreateEmailVerificationTokenService {
     private readonly tokenTtlSeconds: number,
   ) {}
 
-  async invoke(id: string, userId: string, email: string): Promise<void> {
+  async invoke(id: Id, userId: Id, email: Email): Promise<void> {
     const refreshTokenExpiresAt = dayjs().add(this.tokenTtlSeconds, 'seconds');
 
     const tokenString = randomUUID();

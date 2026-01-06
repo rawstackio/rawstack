@@ -47,7 +47,7 @@ describe('get user', () => {
 
     expect(getUserResponse.status).toBe(200);
     expect(getUserResponse.body).toHaveProperty('item');
-    expect(getUserResponse.body.item.id).toBe(user.id);
+    expect(getUserResponse.body.item.id).toBe(user.id.toString());
     expect(getUserResponse.body.item.email).toBe(userEmail);
   });
 
