@@ -8,6 +8,8 @@ import { EntityNotFoundException } from '~/common/domain/exception/entity-not-fo
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { ConflictException } from '~/common/domain/exception/conflict.exception';
 import { UserRoles } from '~/common/domain/enum/user-roles';
+import { Id } from '~/common/domain/model/value-object/id';
+import { Email } from '~/common/domain/model/value-object/email';
 
 @Injectable()
 export class UserRepositoryPrisma extends BaseRepositoryPrisma implements UserRepositoryInterface {
@@ -17,9 +19,9 @@ export class UserRepositoryPrisma extends BaseRepositoryPrisma implements UserRe
         // update
         if (user.internalId) {
           const data: Prisma.UserUpdateInput = {
-            id: user.id,
-            email: user.email,
-            unverifiedEmail: user.unverifiedEmail,
+            id: user.id.toString(),
+            email: user.email.toString(),
+            unverifiedEmail: user.unverifiedEmail?.toString() || null,
             roles: user.roles as Roles[],
             createdAt: user.createdAt.toDate(),
             updatedAt: user.updatedAt.toDate(),
@@ -28,7 +30,7 @@ export class UserRepositoryPrisma extends BaseRepositoryPrisma implements UserRe
           };
 
           await this.prisma.user.update({
-            where: { id: user.id },
+            where: { id: user.id.toString() },
             data,
           });
         }
@@ -39,9 +41,9 @@ export class UserRepositoryPrisma extends BaseRepositoryPrisma implements UserRe
           }
 
           const data: Prisma.UserCreateInput = {
-            id: user.id,
-            email: user.email,
-            unverifiedEmail: user.unverifiedEmail,
+            id: user.id.toString(),
+            email: user.email.toString(),
+            unverifiedEmail: user.unverifiedEmail?.toString() || null,
             hash: user.password,
             roles: user.roles as Roles[],
             createdAt: user.createdAt.toDate(),
@@ -52,14 +54,14 @@ export class UserRepositoryPrisma extends BaseRepositoryPrisma implements UserRe
             data,
           });
 
-          user.internalId = prismaUser.internalId;
+          this.modelFromPrisma(prismaUser, user);
         }
 
         return user;
       } catch (error: unknown) {
         if (error instanceof PrismaClientKnownRequestError) {
           if (error.code === 'P2002') {
-            throw new ConflictException(`a user with the email "${user.email}" already exists`);
+            throw new ConflictException(`a user with the email "${user.email.toString()}" already exists`);
           }
         }
         throw error;
@@ -67,42 +69,40 @@ export class UserRepositoryPrisma extends BaseRepositoryPrisma implements UserRe
     });
   }
 
-  async findById(id: string): Promise<UserModel> {
+  async findById(id: Id): Promise<UserModel> {
     const user = await this.prisma.user.findUnique({
-      where: { id },
+      where: { id: id.toString() },
     });
 
     if (!user || user.deletedAt) {
-      throw new EntityNotFoundException(`User with id ${id} not found`);
+      throw new EntityNotFoundException(`User with id ${id.toString()} not found`);
     }
 
     return this.modelFromPrisma(user);
   }
 
-  async findByIds(ids: string[]): Promise<UserModel[]> {
-    const rows = await this.prisma.user.findMany({ where: { id: { in: ids } } });
+  async findByIds(ids: Id[]): Promise<UserModel[]> {
+    const idStrings = ids.map(id => id.toString());
+    const rows = await this.prisma.user.findMany({ where: { id: { in: idStrings } } });
 
     if (rows.length !== ids.length) {
       const foundIds = rows.map((device) => device.id);
-      const missingIds = ids.filter((id) => !foundIds.includes(id));
+      const missingIds = idStrings.filter((id) => !foundIds.includes(id));
       throw new EntityNotFoundException(`Users with ids "${missingIds.join(', ')}" not found`);
     }
 
     return rows.map((row) => this.modelFromPrisma(row));
   }
 
-  async listIds(page: number, perPage: number, q?: string): Promise<string[]> {
-    let where: Prisma.UserWhereInput = { deletedAt: null };
-
-    if (q) {
-      where = {
-        deletedAt: null,
-        email: {
-          contains: q,
-          mode: 'insensitive',
-        },
-      };
-    }
+  async listIds(
+    page: number,
+    perPage: number,
+    q?: string,
+    role?: UserRoles,
+    orderBy?: string,
+    order?: string,
+  ): Promise<string[]> {
+    const where = this.listQueryWhereClause(q, role);
 
     const users = await this.prisma.user.findMany({
       skip: (page - 1) * perPage,
@@ -111,13 +111,26 @@ export class UserRepositoryPrisma extends BaseRepositoryPrisma implements UserRe
       select: {
         id: true,
       },
+      orderBy: orderBy
+        ? {
+            [orderBy]: order?.toLowerCase() === 'asc' ? 'asc' : 'desc',
+          }
+        : { createdAt: 'desc' },
     });
 
     return users.map((image) => image.id);
   }
 
-  async count(q?: string): Promise<number> {
+  async count(q?: string, role?: UserRoles): Promise<number> {
+    const where = this.listQueryWhereClause(q, role);
+    return this.prisma.user.count({
+      where,
+    });
+  }
+
+  private listQueryWhereClause(q?: string, role?: UserRoles): Prisma.UserWhereInput {
     let where: Prisma.UserWhereInput = { deletedAt: null };
+
     if (q) {
       where = {
         deletedAt: null,
@@ -128,27 +141,37 @@ export class UserRepositoryPrisma extends BaseRepositoryPrisma implements UserRe
       };
     }
 
-    return this.prisma.user.count({
-      where,
-    });
+    if (role) {
+      where = { ...where, roles: { has: role } };
+    }
+
+    return where;
   }
 
-  async existsByEmail(email: string): Promise<boolean> {
+  async existsByEmail(email: Email): Promise<boolean> {
     return this.prisma.user
       .count({
-        where: { email },
+        where: { email: email.toString() },
       })
       .then((count) => count > 0);
   }
 
-  protected modelFromPrisma(prismaUser: User): UserModel {
-    const user = new UserModel(prismaUser.id, prismaUser.email, prismaUser.roles as UserRoles[]);
+  protected modelFromPrisma(prismaUser: User, existing?: UserModel): UserModel {
+    const user = new UserModel(
+      prismaUser.internalId,
+      new Id(prismaUser.id),
+      new Email(prismaUser.email),
+      prismaUser.roles as UserRoles[],
+      dayjs(prismaUser.createdAt),
+      dayjs(prismaUser.updatedAt),
+      prismaUser.unverifiedEmail ? new Email(prismaUser.unverifiedEmail) : null,
+      prismaUser.deletedAt ? dayjs(prismaUser.deletedAt) : undefined,
+    );
 
-    user.unverifiedEmail = prismaUser.unverifiedEmail ?? undefined;
-    user.createdAt = dayjs(prismaUser.createdAt);
-    user.updatedAt = dayjs(prismaUser.updatedAt);
-    user.deletedAt = prismaUser.deletedAt ? dayjs(prismaUser.deletedAt) : undefined;
-    user.internalId = prismaUser.internalId;
+    if (existing) {
+      existing.merge(user);
+      return existing;
+    }
 
     return user;
   }

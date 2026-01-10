@@ -13,7 +13,7 @@ module.exports = async () => {
   // Apply migrations to the fixed test DB
   execSync('npx prisma migrate deploy', { stdio: 'inherit', env: process.env });
 
-  // (Optional) keep client/types fresh
+  // keep client/types fresh
   execSync('npx prisma generate', { stdio: 'inherit', env: process.env });
 
   // (Optional) seed

@@ -1,4 +1,4 @@
-import UserDtoProvider from '~/common/application/query/user/user.dto-provider';
+import { UserDtoProvider } from '~/common/application/query/user/user.dto-provider';
 import { CacheHandlerInterface } from '~/common/domain/cache-handler.interface';
 import { UserRepositoryInterface } from '~/user/domain/model/user/user-repository.interface';
 import { UserDto } from '~/common/application/query/user/dto/user.dto';
@@ -7,6 +7,7 @@ import { UserModel } from '~/user/domain/model/user/user.model';
 import DeserializationException from '~/common/application/exception/deserialization.exception';
 import { EntityNotFoundException } from '~/common/domain/exception/entity-not-found.exception';
 import { Logger } from '@nestjs/common';
+import {Id} from "~/common/domain/model/value-object/id";
 
 describe('UserDtoProvider', () => {
   let userDtoProvider: UserDtoProvider;
@@ -36,12 +37,11 @@ describe('UserDtoProvider', () => {
 
         cache.get.mockResolvedValue(mockUserDto);
 
-        const id = randomUUID();
-
-        const result = await userDtoProvider.getById(id);
+        const id = Id.create();
+        const result = await userDtoProvider.getById(id.toString());
 
         expect(result).toEqual(mockUserDto);
-        expect(cache.get).toHaveBeenCalledWith(id, 'UserDto', UserDto.version, expect.any(Function));
+        expect(cache.get).toHaveBeenCalledWith(id.toString(), 'UserDto', UserDto.version, expect.any(Function));
         expect(repository.findById).not.toHaveBeenCalled();
       });
 
@@ -50,14 +50,14 @@ describe('UserDtoProvider', () => {
         const userModel = { dto: mockUserDto } as unknown as UserModel;
         cache.get.mockResolvedValue(null);
 
-        const id = randomUUID();
+        const id = Id.create()
 
         repository.findById.mockResolvedValue(userModel);
 
-        const result = await userDtoProvider.getById(id);
+        const result = await userDtoProvider.getById(id.toString());
 
         expect(result).toEqual(mockUserDto);
-        expect(cache.get).toHaveBeenCalledWith(id, 'UserDto', UserDto.version, expect.any(Function));
+        expect(cache.get).toHaveBeenCalledWith(id.toString(), 'UserDto', UserDto.version, expect.any(Function));
         expect(repository.findById).toHaveBeenCalledWith(id);
         expect(cache.set).toHaveBeenCalledWith(mockUserDto);
       });
@@ -76,7 +76,7 @@ describe('UserDtoProvider', () => {
 
         expect(result).toEqual(mockUserDto);
         expect(cache.get).toHaveBeenCalledWith(id, 'UserDto', UserDto.version, expect.any(Function));
-        expect(repository.findById).toHaveBeenCalledWith(id);
+        expect(repository.findById).toHaveBeenCalledWith({"value": id});
         expect(cache.set).toHaveBeenCalledWith(mockUserDto);
         expect(logSpy).toHaveBeenCalledWith(new DeserializationException('Invalid cache data'));
         logSpy.mockRestore();
@@ -91,7 +91,7 @@ describe('UserDtoProvider', () => {
         await expect(userDtoProvider.getById(id)).rejects.toThrow(EntityNotFoundException);
 
         expect(cache.get).toHaveBeenCalledWith(id, 'UserDto', UserDto.version, expect.any(Function));
-        expect(repository.findById).toHaveBeenCalledWith(id);
+        expect(repository.findById).toHaveBeenCalledWith({"value": id});
       });
     });
 
@@ -106,7 +106,7 @@ describe('UserDtoProvider', () => {
         const result = await userDtoProvider.list(page, perPage, q);
 
         expect(result).toEqual([]);
-        expect(repository.listIds).toHaveBeenCalledWith(page, perPage, q);
+        expect(repository.listIds).toHaveBeenCalledWith(page, perPage, q, undefined, undefined, undefined);
         expect(cache.getMany).not.toHaveBeenCalled();
       });
 
@@ -115,21 +115,25 @@ describe('UserDtoProvider', () => {
         const perPage = 12;
         const q = 'yo';
 
-        const userDto1 = {} as unknown as UserDto;
-        const userDto2 = {} as unknown as UserDto;
-        const userModel2 = { dto: userDto2 } as unknown as UserModel;
-        const userDto3 = {} as unknown as UserDto;
+        const id1 = randomUUID();
+        const id2 = randomUUID();
+        const id3 = randomUUID();
 
-        repository.listIds.mockResolvedValue(['1', '2', '3']);
+        const userDto1 = { id: id1 } as unknown as UserDto;
+        const userDto2 = { id: id2 } as unknown as UserDto;
+        const userModel2 = { dto: userDto2 } as unknown as UserModel;
+        const userDto3 = { id: id3 } as unknown as UserDto;
+
+        repository.listIds.mockResolvedValue([id1, id2, id3]);
         cache.getMany.mockResolvedValue([userDto1, null, userDto3]);
         repository.findByIds.mockResolvedValue([userModel2]);
 
         const result = await userDtoProvider.list(page, perPage, q);
 
         expect(result).toEqual([userDto1, userDto2, userDto3]);
-        expect(repository.listIds).toHaveBeenCalledWith(page, perPage, q);
-        expect(cache.getMany).toHaveBeenCalledWith(['1', '2', '3'], 'UserDto', UserDto.version, expect.any(Function));
-        expect(repository.findByIds).toHaveBeenCalledWith(['2']);
+        expect(repository.listIds).toHaveBeenCalledWith(page, perPage, q, undefined, undefined, undefined);
+        expect(cache.getMany).toHaveBeenCalledWith([id1, id2, id3], 'UserDto', UserDto.version, expect.any(Function));
+        expect(repository.findByIds).toHaveBeenCalledWith([{value: id2}]);
         expect(cache.set).toHaveBeenCalledWith(userDto2);
       });
     });

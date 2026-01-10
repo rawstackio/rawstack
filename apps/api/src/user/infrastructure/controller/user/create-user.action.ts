@@ -1,10 +1,11 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Post, UseGuards } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { UserResponseDto } from '~/user/application/query/user/dto/user.response-dto';
 import { CreateUserRequest } from './request/create-user.request';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { CreateUserCommand } from '~/user/application/command/user/create-user.command';
 import { GetUserQuery } from '~/user/application/query/user/get-user.query';
+import { OptionalGuard } from '~/common/infrastructure/security/guard/optional.guard';
 
 @Controller('user/users')
 export class CreateUserAction {
@@ -13,6 +14,7 @@ export class CreateUserAction {
     private queryBus: QueryBus,
   ) {}
 
+  @UseGuards(OptionalGuard)
   @Post()
   async invoke(@Body() dto: CreateUserRequest): Promise<UserResponseDto> {
     const id = randomUUID();

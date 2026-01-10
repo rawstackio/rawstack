@@ -4,7 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { AsyncLocalStorage } from 'async_hooks';
 import { Global, Module } from '@nestjs/common';
 import { JwtStrategy } from './infrastructure/security/strategy/jwt.strategy';
-import UserDtoProvider from './application/query/user/user.dto-provider';
+import { UserDtoProvider } from './application/query/user/user.dto-provider';
 import { UserModule } from '~/user/user.module';
 import { PrismaService } from './infrastructure/persistence/prisma/prisma.service';
 import RedisCacheHandler from './infrastructure/cache/redis/redis.cache-handler';
@@ -13,9 +13,9 @@ import { EventBridgeAdaptor } from './infrastructure/event/adaptor/event-bridge.
 import { LoggedInUserProvider } from './infrastructure/security/provider/logged-in-user.provider';
 import { RequestIdProvider } from './infrastructure/logging/request-id-provider';
 import { Encoder } from '~/common/infrastructure/jwt/encoder';
-// import { InMemoryCacheHandler } from '~/common/infrastructure/cache/inMemory/in-memory.cache-handler';
 import { NestJwtTokenVerifier } from '~/common/infrastructure/security/jwt/NestJwtTokenVerifier';
 import { InMemoryAdaptor } from '~/common/infrastructure/event/adaptor/in-memory.adaptor';
+import { AsyncContextCommandBus } from './infrastructure/cqrs/async-context-command-bus';
 
 export const isTestEnvironment = () => {
   return process.env.NODE_ENV === 'test';
@@ -60,6 +60,7 @@ export const isTestEnvironment = () => {
       provide: 'TokenVerifierInterface',
       useClass: NestJwtTokenVerifier,
     },
+    AsyncContextCommandBus,
   ],
   imports: [CqrsModule, UserModule, JwtModule.register({})],
   exports: [
@@ -72,6 +73,7 @@ export const isTestEnvironment = () => {
     UserDtoProvider,
     PrismaService,
     Encoder,
+    AsyncContextCommandBus,
   ],
 })
 export class CommonModule {}

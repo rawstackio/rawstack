@@ -1,6 +1,8 @@
 import { TokenVerifierInterface } from '~/common/domain/token-verifier.interface';
 import { UnauthorizedException } from '~/common/domain/exception/unauthorized.exception';
 import { ActionData, ActionType } from '~/auth/domain/model/action-request/action-request.model';
+import { Id } from "~/common/domain/model/value-object/id";
+import {Email} from "~/common/domain/model/value-object/email";
 
 type Payload = { email: string; id: string; userId: string; type: string };
 type ExtractedData = { action: ActionType; data: ActionData };
@@ -19,9 +21,9 @@ export class ExtractActionRequestDataService {
     return {
       action: 'EMAIL_VERIFICATION',
       data: {
-        tokenId: data.id,
-        userId: data.userId,
-        email: data.email,
+        tokenId: new Id(data.id),
+        userId: new Id(data.userId),
+        email: data.email ? new Email(data.email) : undefined,
       },
     };
   }

@@ -3,6 +3,7 @@ import { randomUUID } from 'crypto';
 import { TokenModel } from '~/auth/domain/model/token/token.model';
 import { TokenWasCreated } from '~/auth/domain/model/token/event/token-was-created';
 import { TokenWasUsed } from '~/auth/domain/model/token/event/token-was-used';
+import { Id } from '~/common/domain/model/value-object/id';
 
 describe('TokenModel', () => {
   describe('Methods', () => {
@@ -15,12 +16,12 @@ describe('TokenModel', () => {
         const rootTokenId = randomUUID();
         const expiresAt = dayjs().add(2, 'hours');
 
-        const model = TokenModel.create(id, tokenHash, userId, rootTokenId, now, expiresAt, 'LOGIN');
+        const model = TokenModel.create(new Id(id), tokenHash, new Id(userId), new Id(rootTokenId), now, expiresAt, 'LOGIN');
 
         expect(model).toBeInstanceOf(TokenModel);
-        expect(model.id).toBe(id);
-        expect(model.userId).toBe(userId);
-        expect(model.rootTokenId).toBe(rootTokenId);
+        expect(model.id.toString()).toBe(id);
+        expect(model.userId.toString()).toBe(userId);
+        expect(model.rootTokenId.toString()).toBe(rootTokenId);
         expect(model.createdAt).toBe(now);
         expect(model.expiresAt).toBe(expiresAt);
         expect(model.type).toBe('LOGIN');
@@ -34,7 +35,7 @@ describe('TokenModel', () => {
         const rootTokenId = randomUUID();
         const expiresAt = dayjs().add(2, 'hours');
 
-        const model = TokenModel.create(id, tokenHash, userId, rootTokenId, now, expiresAt, 'LOGIN');
+        const model = TokenModel.create(new Id(id), tokenHash, new Id(userId), new Id(rootTokenId), now, expiresAt, 'LOGIN');
 
         const events = model.pullEvents();
         expect(events).toHaveLength(1);
@@ -45,10 +46,10 @@ describe('TokenModel', () => {
     describe('isValid', () => {
       test('it should return true for a valid token', () => {
         const now = dayjs();
-        const id = randomUUID();
+        const id = new Id(randomUUID());
         const tokenHash = randomUUID();
-        const userId = randomUUID();
-        const rootTokenId = randomUUID();
+        const userId = new Id(randomUUID());
+        const rootTokenId = new Id(randomUUID());
         const expiresAt = dayjs().add(2, 'hours');
 
         const model = TokenModel.create(id, tokenHash, userId, rootTokenId, now, expiresAt, 'LOGIN');
@@ -57,11 +58,11 @@ describe('TokenModel', () => {
       });
 
       test('it should return false for an expired token', () => {
-        const now = dayjs().subtract(3, 'hours');
-        const id = randomUUID();
+        const now = dayjs();
+        const id = new Id(randomUUID());
         const tokenHash = randomUUID();
-        const userId = randomUUID();
-        const rootTokenId = randomUUID();
+        const userId = new Id(randomUUID());
+        const rootTokenId = new Id(randomUUID());
         const expiresAt = dayjs().subtract(1, 'hours');
 
         const model = TokenModel.create(id, tokenHash, userId, rootTokenId, now, expiresAt, 'LOGIN');
@@ -71,23 +72,23 @@ describe('TokenModel', () => {
 
       test('it should return false for a token with a different userId', () => {
         const now = dayjs();
-        const id = randomUUID();
+        const id = new Id(randomUUID());
         const tokenHash = randomUUID();
-        const userId = randomUUID();
-        const rootTokenId = randomUUID();
+        const userId = new Id(randomUUID());
+        const rootTokenId = new Id(randomUUID());
         const expiresAt = dayjs().add(2, 'hours');
 
-        const model = TokenModel.create(id, tokenHash, userId, rootTokenId, now, expiresAt, 'LOGIN');
+        const model = TokenModel.create(id, tokenHash,userId, rootTokenId, now, expiresAt, 'LOGIN');
 
-        expect(model.isValid(randomUUID(), dayjs())).toBe(false);
+        expect(model.isValid( new Id(randomUUID()), dayjs())).toBe(false);
       });
 
       test('it should return false for a used token', () => {
         const now = dayjs();
-        const id = randomUUID();
+        const id = new Id(randomUUID());
         const tokenHash = randomUUID();
-        const userId = randomUUID();
-        const rootTokenId = randomUUID();
+        const userId = new Id(randomUUID());
+        const rootTokenId = new Id(randomUUID());
         const expiresAt = dayjs().add(2, 'hours');
 
         const model = TokenModel.create(id, tokenHash, userId, rootTokenId, now, expiresAt, 'LOGIN');
@@ -106,7 +107,7 @@ describe('TokenModel', () => {
         const rootTokenId = randomUUID();
         const expiresAt = dayjs().add(2, 'hours');
 
-        const model = TokenModel.create(id, tokenHash, userId, rootTokenId, now, expiresAt, 'LOGIN');
+        const model = TokenModel.create(new Id(id), tokenHash, new Id(userId), new Id(rootTokenId), now, expiresAt, 'LOGIN');
         const usedAt = dayjs().add(1, 'hour');
         model.use(usedAt);
 

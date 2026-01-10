@@ -11,92 +11,141 @@ import { UserUnverifiedEmailWasSet } from './event/user-unverified-email-was-set
 import { UserPasswordWasUpdated } from './event/user-password-was-updated';
 import { UserEmailWasVerified } from '~/user/domain/model/user/event/user-email-was-verified';
 import { ValidationException } from '~/common/domain/exception/validation.exception';
+import { Email } from '~/common/domain/model/value-object/email';
+import { Id } from '~/common/domain/model/value-object/id';
 
 export class UserModel extends DomainAbstractRoot {
-  public internalId = 0;
-  public password?: string;
-  public unverifiedEmail?: string | null;
-  public createdAt: Dayjs = dayjs();
-  public updatedAt: Dayjs = dayjs();
-  public deletedAt?: Dayjs;
+  protected _password?: string;
 
   constructor(
-    public id: string,
-    public email: string,
-    public roles: Array<UserRoles>,
+    protected readonly _internalId: number,
+    protected readonly _id: Id,
+    protected _email: Email,
+    protected _roles: Array<UserRoles>,
+    protected readonly _createdAt: Dayjs = dayjs(),
+    protected _updatedAt: Dayjs = dayjs(),
+    protected _unverifiedEmail: Email | null = null,
+    protected _deletedAt?: Dayjs,
   ) {
     super();
   }
 
-  static create(createdAt: Dayjs, id: string, email: string, password: string, roles: UserRoles[] = []): UserModel {
-    const user = new UserModel(id, email, roles);
-    user.unverifiedEmail = email;
-    user.password = password;
-    user.createdAt = createdAt;
-    user.updatedAt = createdAt;
+  public get id(): Id {
+    return this._id;
+  }
 
-    user.apply(new UserWasCreated(id, createdAt.toDate(), user.getDto(), email, roles));
+  public get email(): Email {
+    return this._email;
+  }
+
+  public get roles(): Array<UserRoles> {
+    return this._roles;
+  }
+
+  public get createdAt(): Dayjs {
+    return this._createdAt;
+  }
+
+  public get internalId(): number {
+    return this._internalId;
+  }
+
+  public get updatedAt(): Dayjs {
+    return this._updatedAt;
+  }
+
+  public get unverifiedEmail(): Email | null {
+    return this._unverifiedEmail;
+  }
+
+  public get deletedAt(): Dayjs | undefined {
+    return this._deletedAt;
+  }
+
+  public get password(): string | undefined {
+    return this._password;
+  }
+
+  static create(createdAt: Dayjs, id: Id, email: Email, password: string, roles: UserRoles[] = []): UserModel {
+    const user = new UserModel(0, id, email, roles, createdAt);
+    user._unverifiedEmail = email;
+    user._password = password;
+    user._updatedAt = createdAt;
+
+    user.apply(new UserWasCreated(id.toString(), createdAt.toDate(), user.getDto(), email.toString(), roles));
 
     return user;
   }
 
-  setUnverifiedEmail(updatedAt: Dayjs, email: string): UserModel {
-    this.unverifiedEmail = email;
-    this.updatedAt = updatedAt;
+  setUnverifiedEmail(updatedAt: Dayjs, email: Email): UserModel {
+    this._unverifiedEmail = email;
+    this._updatedAt = updatedAt;
 
-    this.apply(new UserUnverifiedEmailWasSet(this.id, updatedAt.toDate(), this.dto, email));
+    this.apply(new UserUnverifiedEmailWasSet(this.id.toString(), updatedAt.toDate(), this.dto, email.toString()));
 
     return this;
   }
 
-  verifyEmail(updatedAt: Dayjs, email: string): UserModel {
-    if (email !== this.unverifiedEmail) {
+  verifyEmail(updatedAt: Dayjs, email: Email): UserModel {
+    if (!this._unverifiedEmail || !this._unverifiedEmail.equals(email)) {
       throw new ValidationException('Email does not match the unverified email');
     }
 
-    this.email = email;
-    this.unverifiedEmail = null;
-    this.updatedAt = updatedAt;
-    this.roles.push(UserRoles.VerifiedUser);
+    this._email = email;
+    this._unverifiedEmail = null;
+    this._updatedAt = updatedAt;
+    this._roles.push(UserRoles.VerifiedUser);
 
-    this.apply(new UserEmailWasVerified(this.id, updatedAt.toDate(), this.dto, email));
+    this.apply(new UserEmailWasVerified(this.id.toString(), updatedAt.toDate(), this.dto, email.toString()));
 
     return this;
   }
 
   updatePassword(updatedAt: Dayjs, password: string): UserModel {
-    this.password = password;
-    this.updatedAt = updatedAt;
+    this._password = password;
+    this._updatedAt = updatedAt;
 
-    this.apply(new UserPasswordWasUpdated(this.id, updatedAt.toDate(), this.dto));
+    this.apply(new UserPasswordWasUpdated(this.id.toString(), updatedAt.toDate(), this.dto));
 
     return this;
   }
 
-  updateRoles(updatedAt: Dayjs, roles: UserRoles[]): UserModel {
-    this.roles = roles;
-    this.updatedAt = updatedAt;
+  addRoles(updatedAt: Dayjs, roles: UserRoles[]): UserModel {
+    this._roles = Array.from(new Set([...this.roles, ...roles]));
+    this._updatedAt = updatedAt;
 
-    this.apply(new UserRolesWereUpdated(this.id, updatedAt.toDate(), this.dto, roles));
+    this.apply(new UserRolesWereUpdated(this.id.toString(), updatedAt.toDate(), this.dto, roles));
+
+    return this;
+  }
+
+  removeRoles(updatedAt: Dayjs, roles: UserRoles[]): UserModel {
+    this._roles = this.roles.filter((role) => {
+      return !roles.includes(role);
+    });
+
+    this._updatedAt = updatedAt;
+
+    this.apply(new UserRolesWereUpdated(this.id.toString(), updatedAt.toDate(), this.dto, roles));
 
     return this;
   }
 
   delete(deletedAt: Dayjs): UserModel {
-    this.deletedAt = deletedAt;
-    this.apply(new UserWasDeleted(this.id, deletedAt.toDate(), this.dto));
+    this._deletedAt = deletedAt;
+    this.apply(new UserWasDeleted(this.id.toString(), deletedAt.toDate(), this.dto));
 
     return this;
   }
 
   public get dto(): UserDto {
     return new UserDto(
-      this.id,
-      this.email,
-      this.roles,
-      this.createdAt.toDate(),
-      this.updatedAt.toDate(),
-      this.unverifiedEmail || undefined,
+      this._id.toString(),
+      this._email.toString(),
+      this._roles,
+      this._createdAt.toDate(),
+      this._updatedAt.toDate(),
+      this._unverifiedEmail ? this._unverifiedEmail.toString() : undefined,
     );
   }
 
@@ -105,6 +154,6 @@ export class UserModel extends DomainAbstractRoot {
   }
 
   isDeleted(): boolean {
-    return !!this.deletedAt;
+    return !!this._deletedAt;
   }
 }

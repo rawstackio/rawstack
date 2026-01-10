@@ -39,7 +39,7 @@ describe('current user', () => {
     expect(currentUserResponse.status).toBe(200);
     expect(currentUserResponse.body).toHaveProperty('item');
 
-    expect(currentUserResponse.body.item.id).toBe(user.id);
+    expect(currentUserResponse.body.item.id).toBe(user.id.toString());
     expect(currentUserResponse.body.item.email).toBe(userEmail);
     expect(currentUserResponse.body.item.unverifiedEmail).toBe(userEmail);
     expect(currentUserResponse.body.item.roles).toEqual([]);

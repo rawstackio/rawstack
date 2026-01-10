@@ -4,6 +4,7 @@ import { UserRepositoryInterface } from '~/user/domain/model/user/user-repositor
 import { DeleteUserService } from '~/user/domain/service/user/delete-user.service';
 import { LoggedInUser } from '~/common/domain/logged-in-user';
 import { ForbiddenException } from '~/common/domain/exception/forbidden.exception';
+import {Id} from "~/common/domain/model/value-object/id";
 
 describe('DeleteUserService', () => {
   let service: DeleteUserService;
@@ -25,7 +26,7 @@ describe('DeleteUserService', () => {
   });
 
   it('deletes own user', async () => {
-    const id = randomUUID();
+    const id = Id.create();
     const actor = new LoggedInUser(id, []);
 
     mockRepository.findById.mockResolvedValue(mockUser);
@@ -37,8 +38,8 @@ describe('DeleteUserService', () => {
   });
 
   it('cannot delete another user', async () => {
-    const actorId = randomUUID();
-    const id = randomUUID();
+    const actorId = Id.create();
+    const id = Id.create();
     const actor = new LoggedInUser(actorId, []);
 
     mockRepository.findById.mockResolvedValue(mockUser);
@@ -50,8 +51,8 @@ describe('DeleteUserService', () => {
   });
 
   it('can delete another user', async () => {
-    const actorId = randomUUID();
-    const id = randomUUID();
+    const actorId = Id.create();
+    const id = Id.create();
     const actor = new LoggedInUser(actorId, ['ADMIN']);
 
     mockRepository.findById.mockResolvedValue(mockUser);

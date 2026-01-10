@@ -3,6 +3,8 @@ import { randomUUID } from 'crypto';
 import { TokenRepositoryInterface } from '~/auth/domain/model/token/token-repository.interface';
 import { TokenModel } from '~/auth/domain/model/token/token.model';
 import { CreateEmailVerificationTokenService } from '~/auth/domain/service/token/create-email-verification-token.service';
+import { Id } from '~/common/domain/model/value-object/id';
+import { Email } from '~/common/domain/model/value-object/email';
 
 describe('CreateEmailVerificationTokenService', () => {
   let service: CreateEmailVerificationTokenService;
@@ -28,17 +30,17 @@ describe('CreateEmailVerificationTokenService', () => {
     const userId = randomUUID();
     const email = 'test@rawstack.io';
 
-    await service.invoke(id, userId, email);
+    await service.invoke(new Id(id), new Id(userId), new Email(email));
 
     expect(TokenModel.create).toHaveBeenCalledWith(
-      id,
+      expect.any(Id),
       expect.any(String),
-      userId,
-      userId,
+      expect.any(Id),
+      expect.any(Id),
       expect.any(dayjs),
       expect.any(dayjs),
       'EMAIL_VERIFICATION',
-      email,
+      expect.any(Email),
       expect.any(String),
     );
     expect(mockRepository.persist).toHaveBeenCalledWith(mockEvent);
@@ -50,6 +52,6 @@ describe('CreateEmailVerificationTokenService', () => {
     const userId = randomUUID();
     const email = 'test@rawstack.io';
 
-    await expect(service.invoke(id, userId, email)).rejects.toThrow('persist failed');
+    await expect(service.invoke(new Id(id), new Id(userId), new Email(email))).rejects.toThrow('persist failed');
   });
 });

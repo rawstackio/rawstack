@@ -4,6 +4,8 @@ import { TokenModel } from '../../model/token/token.model';
 import { EntityNotFoundException } from '~/common/domain/exception/entity-not-found.exception';
 import { createHash, randomUUID } from 'crypto';
 import { TokenHashRepositoryInterface } from '~/auth/domain/model/token/token-hash-repository.interface';
+import { Id } from '~/common/domain/model/value-object/id';
+import { Email } from '~/common/domain/model/value-object/email';
 
 export class CreatePasswordResetTokenService {
   constructor(
@@ -12,8 +14,8 @@ export class CreatePasswordResetTokenService {
     private readonly tokenTtlSeconds: number,
   ) {}
 
-  async invoke(id: string, email: string): Promise<void> {
-    let user: { hash: string; id: string };
+  async invoke(id: Id, email: Email): Promise<void> {
+    let user: { hash: string; id: Id };
     try {
       user = await this.repository.findTokenUserByEmail(email);
     } catch (e: unknown) {

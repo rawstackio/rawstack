@@ -21,6 +21,29 @@ get:
       required: false
       schema:
         type: string
+    - in: query
+      name: role
+      required: false
+      description: Filter users by role
+      schema:
+        type: string
+        enum: [ADMIN, VERIFIED_USER]
+    - in: query
+      name: orderBy
+      required: false
+      description: Field to order results by
+      schema:
+        type: string
+        enum: [createdAt, updatedAt, email]
+        default: updatedAt
+    - in: query
+      name: order
+      required: false
+      description: Sort order (ascending or descending)
+      schema:
+        type: string
+        enum: [DESC, ASC]
+        default: DESC
   responses:
     '200':
       description: OK
@@ -45,7 +68,7 @@ post:
         schema:
           $ref: '../../schemas/user/request.yml#/UserPostRequest'
   responses:
-    '201':
+    '200':
       description: OK
       content:
         application/json:

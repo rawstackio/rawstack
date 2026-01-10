@@ -8,6 +8,6 @@ export class ListUsersQueryHandler {
   constructor(private responseBuilder: UserCollectionResponseBuilder) {}
 
   async execute(query: ListUsersQuery): Promise<UserCollectionResponseDto> {
-    return this.responseBuilder.build(query.page, query.perPage, query.q);
+    return this.responseBuilder.build(query.page, query.perPage, query.q, query.role, query.orderBy, query.order);
   }
 }

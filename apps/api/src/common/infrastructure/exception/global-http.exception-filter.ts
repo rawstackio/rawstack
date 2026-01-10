@@ -1,10 +1,10 @@
 import {
   ArgumentsHost,
   Catch,
-  ExceptionFilter,
   ForbiddenException,
   HttpException,
   HttpStatus,
+  Logger,
   UnauthorizedException,
 } from '@nestjs/common';
 import { BaseExceptionFilter } from '@nestjs/core';
@@ -15,29 +15,24 @@ import { ForbiddenException as DomainForbiddenException } from '~/common/domain/
 import { UnauthorizedException as DomainUnauthorizedException } from '~/common/domain/exception/unauthorized.exception';
 import { ConflictException } from '~/common/domain/exception/conflict.exception';
 import { ValidationException } from '~/common/domain/exception/validation.exception';
-import { ZodValidationException } from 'nestjs-zod';
+import { ZodSerializationException } from 'nestjs-zod';
+import { ZodError } from 'zod';
 
 @Catch()
-export class GlobalHttpExceptionFilter extends BaseExceptionFilter implements ExceptionFilter {
+export class GlobalHttpExceptionFilter extends BaseExceptionFilter {
+  private readonly logger = new Logger(GlobalHttpExceptionFilter.name);
+
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const res = ctx.getResponse<Response>();
 
     // Validation
-    if (exception instanceof ZodValidationException) {
+    if (exception instanceof ZodSerializationException) {
       const zodError = exception.getZodError();
-      // Flatten and keep useful details (message, path, code)
-      const issues = zodError.issues.map((i) => ({
-        message: i.message,
-        path: i.path.join('.'),
-        code: i.code,
-      }));
-      res.status(400).json({
-        statusCode: 400,
-        message: 'Validation failed',
-        error: 'Validation Error',
-        issues: issues,
-      });
+      if (zodError instanceof ZodError) {
+        this.logger.error(`ZodSerializationException: ${zodError.message}`);
+      }
+      super.catch(exception, host);
     } else if (exception instanceof EntityNotFoundException) {
       // Domain exceptions
       res.status(HttpStatus.NOT_FOUND).json({

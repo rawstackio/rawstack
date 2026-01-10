@@ -9,7 +9,7 @@ post:
         schema:
           $ref: '../../schemas/auth/token/request.yml#/AuthTokenPostRequest'
   responses:
-    '201':
+    '200':
      description: OK
      content:
        application/json:

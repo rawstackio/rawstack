@@ -4,6 +4,7 @@ import { DeleteUserCommand } from './delete-user.command';
 import { DeleteUserService } from '~/user/domain/service/user/delete-user.service';
 import { UnauthorizedException } from '~/common/domain/exception/unauthorized.exception';
 import { LoggedInUserProvider } from '~/common/infrastructure/security/provider/logged-in-user.provider';
+import { Id } from '~/common/domain/model/value-object/id';
 
 @CommandHandler(DeleteUserCommand)
 export class DeleteUserCommandHandler implements ICommandHandler<CreateUserCommand> {
@@ -18,6 +19,6 @@ export class DeleteUserCommandHandler implements ICommandHandler<CreateUserComma
       throw new UnauthorizedException('Unauthorized');
     }
 
-    await this.service.invoke(actor, command.id);
+    await this.service.invoke(actor, new Id(command.id));
   }
 }

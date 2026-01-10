@@ -14,7 +14,7 @@ class TokenProvider {
     const response = await request(app.getHttpServer())
       .post('/auth/tokens')
       .send({
-        email: user.email,
+        email: user.email.toString(),
         password: UserProvider.defaultPassword,
       })
       .set('Accept', 'application/json');

@@ -8,6 +8,8 @@ import { EntityNotFoundException } from '~/common/domain/exception/entity-not-fo
 import { Encoder } from '~/common/infrastructure/jwt/encoder';
 import { DomainEventInterface } from '~/common/domain/model/event/domain-event.interface';
 import { ConfigService } from '@nestjs/config';
+import { Id } from '~/common/domain/model/value-object/id';
+import {Email} from "~/common/domain/model/value-object/email";
 
 @Injectable()
 export class TokenRepositoryPrisma extends BaseRepositoryPrisma implements TokenRepositoryInterface {
@@ -37,23 +39,24 @@ export class TokenRepositoryPrisma extends BaseRepositoryPrisma implements Token
     return await this.saveAndPublish<TokenModel>(token, async (token) => {
       if (!token.internalId) {
         const data: Prisma.TokenCreateInput = {
-          id: token.id,
+          id: token.id.toString(),
           tokenHash: token.tokenHash,
-          userId: token.userId,
-          rootTokenId: token.rootTokenId,
+          userId: token.userId.toString(),
+          rootTokenId: token.rootTokenId.toString(),
           createdAt: token.createdAt.toDate(),
           expiresAt: token.expiresAt.toDate(),
           type: token.type,
         };
 
         const prismaToken = await this.prisma.token.create({ data });
+        const model = this.modelFromPrisma(prismaToken);
 
-        token.internalId = prismaToken.internalId;
+        token.merge(model);
       } else {
         const data: Prisma.TokenUpdateInput = {
-          id: token.id,
-          userId: token.userId,
-          rootTokenId: token.rootTokenId,
+          id: token.id.toString(),
+          userId: token.userId.toString(),
+          rootTokenId: token.rootTokenId.toString(),
           createdAt: token.createdAt.toDate(),
           expiresAt: token.expiresAt.toDate(),
           type: token.type,
@@ -64,7 +67,7 @@ export class TokenRepositoryPrisma extends BaseRepositoryPrisma implements Token
         }
 
         await this.prisma.token.update({
-          where: { id: token.id },
+          where: { id: token.id.toString() },
           data,
         });
       }
@@ -73,9 +76,9 @@ export class TokenRepositoryPrisma extends BaseRepositoryPrisma implements Token
     });
   }
 
-  async findById(id: string): Promise<TokenModel> {
+  async findById(id: Id): Promise<TokenModel> {
     const token = await this.prisma.token.findUnique({
-      where: { id },
+      where: { id: id.toString() },
     });
 
     if (!token || token.expiresAt < new Date()) {
@@ -97,16 +100,16 @@ export class TokenRepositoryPrisma extends BaseRepositoryPrisma implements Token
     return this.modelFromPrisma(token);
   }
 
-  async deleteAllByRootTokenId(id: string, whereNotId?: boolean): Promise<void> {
-    const where = whereNotId ? { rootTokenId: { not: id } } : { rootTokenId: id };
+  async deleteAllByRootTokenId(id: Id, whereNotId?: boolean): Promise<void> {
+    const where = whereNotId ? { rootTokenId: { not: id.toString() } } : { rootTokenId: id.toString() };
 
     await this.prisma.token.deleteMany({
       where,
     });
   }
 
-  async findTokenUserByEmail(email: string, role?: string): Promise<{ hash: string; id: string }> {
-    let where: Prisma.UserWhereUniqueInput = { email };
+  async findTokenUserByEmail(email: Email, role?: string): Promise<{ hash: string; id: Id }> {
+    let where: Prisma.UserWhereUniqueInput = { email: email.toString() };
     if (role) {
       where = {
         ...where,
@@ -121,22 +124,20 @@ export class TokenRepositoryPrisma extends BaseRepositoryPrisma implements Token
       throw new EntityNotFoundException(`User with email ${email} not found`);
     }
 
-    return { hash: user.hash, id: user.id };
+    return { hash: user.hash, id: new Id(user.id) };
   }
 
   protected modelFromPrisma(token: Token): TokenModel {
-    const model = new TokenModel(
-      token.id,
+    return new TokenModel(
+      token.internalId,
+      new Id(token.id),
       token.tokenHash,
-      token.userId,
-      token.rootTokenId,
+      new Id(token.userId),
+      new Id(token.rootTokenId),
       dayjs(token.createdAt),
       dayjs(token.expiresAt),
       token.type,
+      token.usedAt ? dayjs(token.usedAt) : undefined,
     );
-    model.internalId = token.internalId;
-    model.usedAt = token.usedAt ? dayjs(token.usedAt) : undefined;
-
-    return model;
   }
 }
