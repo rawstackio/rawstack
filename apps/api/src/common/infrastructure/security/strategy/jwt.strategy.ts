@@ -4,7 +4,7 @@ import { PassportStrategy } from '@nestjs/passport';
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { LoggedInUser } from '../../../domain/logged-in-user';
 import { UserDtoProvider } from '../../../application/query/user/user.dto-provider';
-import { Id } from "~/common/domain/model/value-object/id";
+import { Id } from '~/common/domain/model/value-object/id';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {

@@ -1,7 +1,7 @@
 import * as dayjs from 'dayjs';
 import { TokenRepositoryInterface } from '~/auth/domain/model/token/token-repository.interface';
 import { UnauthorizedException } from '@nestjs/common';
-import { Id } from "~/common/domain/model/value-object/id";
+import { Id } from '~/common/domain/model/value-object/id';
 
 export class VerifyAndUseTokenService {
   constructor(private repository: TokenRepositoryInterface) {}

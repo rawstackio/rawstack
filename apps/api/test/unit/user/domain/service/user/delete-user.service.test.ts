@@ -4,7 +4,7 @@ import { UserRepositoryInterface } from '~/user/domain/model/user/user-repositor
 import { DeleteUserService } from '~/user/domain/service/user/delete-user.service';
 import { LoggedInUser } from '~/common/domain/logged-in-user';
 import { ForbiddenException } from '~/common/domain/exception/forbidden.exception';
-import {Id} from "~/common/domain/model/value-object/id";
+import { Id } from '~/common/domain/model/value-object/id';
 
 describe('DeleteUserService', () => {
   let service: DeleteUserService;

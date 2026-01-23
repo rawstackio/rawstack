@@ -71,7 +71,17 @@ export class TokenModel extends DomainAbstractRoot {
     tokenRaw?: string,
   ): TokenModel {
     const token = new TokenModel(0, id, tokenHash, userId, rootTokenId, createdAt, expiresAt, type);
-    token.apply(new TokenWasCreated(id.toString(), createdAt.toDate(), userId.toString(), expiresAt, type, email?.toString(), tokenRaw));
+    token.apply(
+      new TokenWasCreated(
+        id.toString(),
+        createdAt.toDate(),
+        userId.toString(),
+        expiresAt,
+        type,
+        email?.toString(),
+        tokenRaw,
+      ),
+    );
 
     return token;
   }

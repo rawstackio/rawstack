@@ -16,7 +16,12 @@ export class CreateTokenCommandHandler implements ICommandHandler<CreateTokenCom
     if (!command.password && !command.refreshToken) {
       await this.passwordTokenService.invoke(new Id(command.id), new Email(command.email));
     } else {
-      await this.refreshTokenService.invoke(new Id(command.id), new Email(command.email), command.password, command.refreshToken);
+      await this.refreshTokenService.invoke(
+        new Id(command.id),
+        new Email(command.email),
+        command.password,
+        command.refreshToken,
+      );
     }
   }
 }

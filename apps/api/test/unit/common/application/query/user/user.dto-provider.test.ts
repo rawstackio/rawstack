@@ -7,7 +7,7 @@ import { UserModel } from '~/user/domain/model/user/user.model';
 import DeserializationException from '~/common/application/exception/deserialization.exception';
 import { EntityNotFoundException } from '~/common/domain/exception/entity-not-found.exception';
 import { Logger } from '@nestjs/common';
-import {Id} from "~/common/domain/model/value-object/id";
+import { Id } from '~/common/domain/model/value-object/id';
 
 describe('UserDtoProvider', () => {
   let userDtoProvider: UserDtoProvider;
@@ -50,7 +50,7 @@ describe('UserDtoProvider', () => {
         const userModel = { dto: mockUserDto } as unknown as UserModel;
         cache.get.mockResolvedValue(null);
 
-        const id = Id.create()
+        const id = Id.create();
 
         repository.findById.mockResolvedValue(userModel);
 
@@ -76,7 +76,7 @@ describe('UserDtoProvider', () => {
 
         expect(result).toEqual(mockUserDto);
         expect(cache.get).toHaveBeenCalledWith(id, 'UserDto', UserDto.version, expect.any(Function));
-        expect(repository.findById).toHaveBeenCalledWith({"value": id});
+        expect(repository.findById).toHaveBeenCalledWith({ value: id });
         expect(cache.set).toHaveBeenCalledWith(mockUserDto);
         expect(logSpy).toHaveBeenCalledWith(new DeserializationException('Invalid cache data'));
         logSpy.mockRestore();
@@ -91,7 +91,7 @@ describe('UserDtoProvider', () => {
         await expect(userDtoProvider.getById(id)).rejects.toThrow(EntityNotFoundException);
 
         expect(cache.get).toHaveBeenCalledWith(id, 'UserDto', UserDto.version, expect.any(Function));
-        expect(repository.findById).toHaveBeenCalledWith({"value": id});
+        expect(repository.findById).toHaveBeenCalledWith({ value: id });
       });
     });
 
@@ -133,7 +133,7 @@ describe('UserDtoProvider', () => {
         expect(result).toEqual([userDto1, userDto2, userDto3]);
         expect(repository.listIds).toHaveBeenCalledWith(page, perPage, q, undefined, undefined, undefined);
         expect(cache.getMany).toHaveBeenCalledWith([id1, id2, id3], 'UserDto', UserDto.version, expect.any(Function));
-        expect(repository.findByIds).toHaveBeenCalledWith([{value: id2}]);
+        expect(repository.findByIds).toHaveBeenCalledWith([{ value: id2 }]);
         expect(cache.set).toHaveBeenCalledWith(userDto2);
       });
     });

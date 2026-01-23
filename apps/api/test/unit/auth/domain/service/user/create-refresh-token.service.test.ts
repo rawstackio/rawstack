@@ -210,7 +210,7 @@ describe('CreateRefreshTokenService', () => {
       const mockUser = {
         id: new Id(randomUUID()),
         hash: 'hashedPassword',
-      } as unknown as { hash: string; id: Id};
+      } as unknown as { hash: string; id: Id };
 
       const mockParentToken = {
         id: new Id(randomUUID()),

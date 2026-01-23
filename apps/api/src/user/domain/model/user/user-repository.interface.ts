@@ -1,7 +1,7 @@
 import { UserModel } from './user.model';
 import { UserRoles } from '~/common/domain/enum/user-roles';
-import { Id } from "~/common/domain/model/value-object/id";
-import {Email} from "~/common/domain/model/value-object/email";
+import { Id } from '~/common/domain/model/value-object/id';
+import { Email } from '~/common/domain/model/value-object/email';
 
 export interface UserRepositoryInterface {
   persist(User: UserModel): Promise<UserModel>;

@@ -106,5 +106,40 @@ For setup instructions, see:
 - `apps/admin/README.md`
 - `apps/web/README.md`
 
+## [v0.1.0-alpha.4] - 2026-01-23
+### 🚀 Overview
+This alpha introduces the **Infrastructure as Code (IaC)** foundation for the RawStack platform using **AWS CDK**.  
+The focus of this release is deployment automation — enabling reproducible, scalable cloud infrastructure for the RawStack API.
 
+### ✨ Added
+- **Core Stack** (`infrastructure/core-stack`) — AWS CDK infrastructure
+    - VPC with public and private subnets
+    - RDS PostgreSQL database with secure credentials in Secrets Manager
+    - ElastiCache Redis cluster for caching and pub/sub
+    - ECS Fargate cluster with Application Load Balancer
+    - ECR integration for container images
+    - Auto-scaling based on CPU and memory utilization
+    - Automatic deployment on ECR image push via Lambda + EventBridge
+    - Secure networking and IAM roles
+- **ECR Push Script** (`scripts/push-api-to-ecr.sh`)
+    - Build and push Docker images to AWS ECR
+    - Automatic ECR repository creation if not exists
+    - Environment-based configuration via `.env`
+- **API Core** minor improvements and tweaks
 
+### 🧱 Scope
+Included in this release:
+- `infrastructure/core-stack` — AWS CDK Infrastructure *(new)*
+- `scripts/push-api-to-ecr.sh` — ECR deployment script *(new)*
+- `apps/api` — RawStack API Core (minor updates)
+- `apps/app` — RawStack Mobile App
+- `apps/admin` — Admin Dashboard
+- `apps/web` — Public Website
+
+### ⚙️ Notes
+This is an **infrastructure alpha**.  
+The CDK stack is designed for development and testing environments. Production configurations (multi-AZ, enhanced security, deletion protection) should be enabled before deploying to production.
+
+For setup instructions, see:
+- `infrastructure/core-stack/README.md`
+- `apps/api/README.md`

@@ -9,7 +9,7 @@ import { Encoder } from '~/common/infrastructure/jwt/encoder';
 import { DomainEventInterface } from '~/common/domain/model/event/domain-event.interface';
 import { ConfigService } from '@nestjs/config';
 import { Id } from '~/common/domain/model/value-object/id';
-import {Email} from "~/common/domain/model/value-object/email";
+import { Email } from '~/common/domain/model/value-object/email';
 
 @Injectable()
 export class TokenRepositoryPrisma extends BaseRepositoryPrisma implements TokenRepositoryInterface {

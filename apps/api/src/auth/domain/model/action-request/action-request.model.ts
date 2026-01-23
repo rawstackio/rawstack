@@ -54,7 +54,7 @@ export class ActionRequestModel extends DomainAbstractRoot {
   get data(): ActionData {
     return this._data;
   }
-  
+
   private serializeData(): ActionDataSerialized {
     return {
       tokenId: this._data.tokenId.toString(),
@@ -65,26 +65,24 @@ export class ActionRequestModel extends DomainAbstractRoot {
 
   static create(createdAt: Dayjs, id: Id, action: ActionType, data: ActionData): ActionRequestModel {
     const token = new ActionRequestModel(id, 'PROCESSING', action, createdAt, data);
-    token.apply(new ActionRequestWasCreated(
-      id.toString(), 
-      createdAt.toDate(), 
-      action, 
-      'PROCESSING', 
-      token.serializeData()
-    ));
+    token.apply(
+      new ActionRequestWasCreated(id.toString(), createdAt.toDate(), action, 'PROCESSING', token.serializeData()),
+    );
 
     return token;
   }
 
   updateStatus(updatedAt: Dayjs, status: ActionStatus): ActionRequestModel {
     this._status = status;
-    this.apply(new ActionRequestStatusWasUpdated(
-      this.id.toString(), 
-      updatedAt.toDate(), 
-      this.action, 
-      status, 
-      this.serializeData()
-    ));
+    this.apply(
+      new ActionRequestStatusWasUpdated(
+        this.id.toString(),
+        updatedAt.toDate(),
+        this.action,
+        status,
+        this.serializeData(),
+      ),
+    );
 
     return this;
   }

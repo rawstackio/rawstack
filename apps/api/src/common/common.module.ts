@@ -16,6 +16,7 @@ import { Encoder } from '~/common/infrastructure/jwt/encoder';
 import { NestJwtTokenVerifier } from '~/common/infrastructure/security/jwt/NestJwtTokenVerifier';
 import { InMemoryAdaptor } from '~/common/infrastructure/event/adaptor/in-memory.adaptor';
 import { AsyncContextCommandBus } from './infrastructure/cqrs/async-context-command-bus';
+import { HealthController } from './infrastructure/controller/health.controller';
 
 export const isTestEnvironment = () => {
   return process.env.NODE_ENV === 'test';
@@ -23,6 +24,7 @@ export const isTestEnvironment = () => {
 
 @Global()
 @Module({
+  controllers: [HealthController],
   providers: [
     {
       provide: 'JWT_SECRET',

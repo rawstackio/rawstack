@@ -5,9 +5,7 @@ import { Id } from '~/common/domain/model/value-object/id';
 import { Email } from '~/common/domain/model/value-object/email';
 
 @CommandHandler(CreateEmailVerificationTokenCommand)
-export class CreateEmailVerificationTokenCommandHandler
-  implements ICommandHandler<CreateEmailVerificationTokenCommand>
-{
+export class CreateEmailVerificationTokenCommandHandler implements ICommandHandler<CreateEmailVerificationTokenCommand> {
   constructor(private service: CreateEmailVerificationTokenService) {}
 
   async execute(command: CreateEmailVerificationTokenCommand): Promise<void> {
