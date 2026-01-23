@@ -35,34 +35,37 @@ export class ActionRequestRepositoryRedis implements ActionRequestRepositoryInte
     }
 
     const obj = JSON.parse(data);
-    
+
     // Extract the data - it might be stored with value objects serialized
     const storedData = obj._data;
     const actionData: ActionData = {
-      tokenId: new Id(typeof storedData.tokenId === 'string' ? storedData.tokenId : (storedData.tokenId.value || storedData.tokenId)),
-      userId: new Id(typeof storedData.userId === 'string' ? storedData.userId : (storedData.userId.value || storedData.userId)),
-      email: storedData.email ? new Email(typeof storedData.email === 'string' ? storedData.email : (storedData.email.value || storedData.email)) : undefined,
+      tokenId: new Id(
+        typeof storedData.tokenId === 'string' ? storedData.tokenId : storedData.tokenId.value || storedData.tokenId,
+      ),
+      userId: new Id(
+        typeof storedData.userId === 'string' ? storedData.userId : storedData.userId.value || storedData.userId,
+      ),
+      email: storedData.email
+        ? new Email(
+            typeof storedData.email === 'string' ? storedData.email : storedData.email.value || storedData.email,
+          )
+        : undefined,
     };
-    
+
     // Extract the id - it might be stored as a value object
-    const idString = typeof obj._id === 'string' ? obj._id : (obj._id.value || obj._id);
-    
+    const idString = typeof obj._id === 'string' ? obj._id : obj._id.value || obj._id;
+
     // Use the create method to properly construct value objects
-    const model = ActionRequestModel.create(
-      dayjs(obj._createdAt),
-      new Id(idString),
-      obj._action,
-      actionData
-    );
-    
+    const model = ActionRequestModel.create(dayjs(obj._createdAt), new Id(idString), obj._action, actionData);
+
     // Update the status if it's different from PROCESSING
     if (obj._status !== 'PROCESSING') {
       model.updateStatus(dayjs(), obj._status);
     }
-    
+
     // Clear any events generated during reconstruction
     model.pullEvents();
-    
+
     return model;
   }
 }

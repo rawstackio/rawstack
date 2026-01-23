@@ -1,6 +1,6 @@
 import { TokenModel } from './token.model';
-import { Id } from "~/common/domain/model/value-object/id";
-import { Email } from "~/common/domain/model/value-object/email";
+import { Id } from '~/common/domain/model/value-object/id';
+import { Email } from '~/common/domain/model/value-object/email';
 
 export interface TokenRepositoryInterface {
   persist(token: TokenModel): Promise<TokenModel>;

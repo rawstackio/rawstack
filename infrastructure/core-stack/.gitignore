@@ -1,0 +1,29 @@
+/tmp
+/out-tsc
+cdk.out
+cdk.context.json
+
+.aws-sam
+
+/node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+/.pnp
+.pnp.js
+.env
+
+.vscode/*
+
+template.yaml
+
+# Build output
+/dist
+*.js
+*.d.ts
+
+# Lock files (yarn is the primary lock file)
+package-lock.json
+
+# Backup files
+*.bak

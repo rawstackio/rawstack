@@ -29,9 +29,9 @@ export class CreateUserService {
     }
 
     // Only admin can update roles
-    if (roles) {
+    if (roles?.length) {
       if (!actorIsAdmin) {
-        throw new ForbiddenException('only admins can create users with roles');
+        throw new ForbiddenException('only admins can create users with roles xxxxxx');
       }
     }
 

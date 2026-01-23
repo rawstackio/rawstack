@@ -72,7 +72,7 @@ describe('TokenRepositoryPrisma Integration Tests', () => {
 
     it('should persist token to database', async () => {
       // Arrange
-      tokenId =  new Id(randomUUID());
+      tokenId = new Id(randomUUID());
       tokenHash = await argon.hash(randomUUID());
       const createdAt = dayjs();
       const expiresAt = dayjs().add(1, 'hour');
@@ -98,7 +98,7 @@ describe('TokenRepositoryPrisma Integration Tests', () => {
 
     it('should dispatch TokenWasCreated event to event bridge', async () => {
       // Arrange
-      tokenId =  new Id(randomUUID());
+      tokenId = new Id(randomUUID());
       tokenHash = await argon.hash(randomUUID());
       const createdAt = dayjs();
       const expiresAt = dayjs().add(1, 'hour');
@@ -141,7 +141,15 @@ describe('TokenRepositoryPrisma Integration Tests', () => {
       const createdAt = dayjs();
       const expiresAt = dayjs().add(1, 'hour');
 
-      token = TokenModel.create(new Id(tokenId), tokenHash, new Id(testUserId), new Id(tokenId), createdAt, expiresAt, 'LOGIN');
+      token = TokenModel.create(
+        new Id(tokenId),
+        tokenHash,
+        new Id(testUserId),
+        new Id(tokenId),
+        createdAt,
+        expiresAt,
+        'LOGIN',
+      );
       await repository.persist(token);
 
       // Clear events from initial creation
@@ -281,7 +289,15 @@ describe('TokenRepositoryPrisma Integration Tests', () => {
       const createdAt = dayjs();
       const expiresAt = dayjs().add(1, 'hour');
 
-      const token = TokenModel.create(new Id(tokenId), tokenHash, new Id(testUserId), new Id(tokenId), createdAt, expiresAt, 'LOGIN');
+      const token = TokenModel.create(
+        new Id(tokenId),
+        tokenHash,
+        new Id(testUserId),
+        new Id(tokenId),
+        createdAt,
+        expiresAt,
+        'LOGIN',
+      );
       await repository.persist(token);
       eventAdaptor.clear();
     });
@@ -447,7 +463,15 @@ describe('TokenRepositoryPrisma Integration Tests', () => {
       const createdAt = dayjs();
       const expiresAt = dayjs().add(1, 'hour');
 
-      const token = TokenModel.create(new Id(tokenId), tokenHash, new Id(testUserId), new Id(tokenId), createdAt, expiresAt, 'PASSWORD_RESET');
+      const token = TokenModel.create(
+        new Id(tokenId),
+        tokenHash,
+        new Id(testUserId),
+        new Id(tokenId),
+        createdAt,
+        expiresAt,
+        'PASSWORD_RESET',
+      );
 
       // Act
       await repository.persist(token);

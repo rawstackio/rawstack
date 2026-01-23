@@ -40,7 +40,13 @@ describe('CreateUserService', () => {
 
     await service.invoke(actor, id, email, password, [], true);
 
-    expect(UserModel.create).toHaveBeenCalledWith(expect.any(dayjs), expect.any(Id), expect.any(Email), 'mockedHashedPassword', []);
+    expect(UserModel.create).toHaveBeenCalledWith(
+      expect.any(dayjs),
+      expect.any(Id),
+      expect.any(Email),
+      'mockedHashedPassword',
+      [],
+    );
     expect(mockRepository.persist).toHaveBeenCalledWith(mockUser);
   });
 
@@ -52,7 +58,13 @@ describe('CreateUserService', () => {
 
     await service.invoke(actor, id, email, password, [], false);
 
-    expect(UserModel.create).toHaveBeenCalledWith(expect.any(dayjs), expect.any(Id), expect.any(Email), 'mockedHashedPassword', []);
+    expect(UserModel.create).toHaveBeenCalledWith(
+      expect.any(dayjs),
+      expect.any(Id),
+      expect.any(Email),
+      'mockedHashedPassword',
+      [],
+    );
     expect(mockRepository.persist).toHaveBeenCalledWith(mockUser);
   });
 

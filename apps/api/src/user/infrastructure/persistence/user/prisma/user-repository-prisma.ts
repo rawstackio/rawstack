@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import * as dayjs from 'dayjs';
 import { Prisma, Roles, User } from '@prisma/client';
+import { PrismaClientKnownRequestError } from '@prisma/client-runtime-utils';
 import { UserRepositoryInterface } from '~/user/domain/model/user/user-repository.interface';
 import { UserModel } from '~/user/domain/model/user/user.model';
 import BaseRepositoryPrisma from '~/common/infrastructure/persistence/prisma/base-repository-prisma';
 import { EntityNotFoundException } from '~/common/domain/exception/entity-not-found.exception';
-import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { ConflictException } from '~/common/domain/exception/conflict.exception';
 import { UserRoles } from '~/common/domain/enum/user-roles';
 import { Id } from '~/common/domain/model/value-object/id';
@@ -82,11 +82,11 @@ export class UserRepositoryPrisma extends BaseRepositoryPrisma implements UserRe
   }
 
   async findByIds(ids: Id[]): Promise<UserModel[]> {
-    const idStrings = ids.map(id => id.toString());
+    const idStrings = ids.map((id) => id.toString());
     const rows = await this.prisma.user.findMany({ where: { id: { in: idStrings } } });
 
     if (rows.length !== ids.length) {
-      const foundIds = rows.map((device) => device.id);
+      const foundIds = rows.map((user) => user.id);
       const missingIds = idStrings.filter((id) => !foundIds.includes(id));
       throw new EntityNotFoundException(`Users with ids "${missingIds.join(', ')}" not found`);
     }
@@ -118,7 +118,7 @@ export class UserRepositoryPrisma extends BaseRepositoryPrisma implements UserRe
         : { createdAt: 'desc' },
     });
 
-    return users.map((image) => image.id);
+    return users.map((user) => user.id);
   }
 
   async count(q?: string, role?: UserRoles): Promise<number> {

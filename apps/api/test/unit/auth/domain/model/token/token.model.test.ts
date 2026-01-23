@@ -16,7 +16,15 @@ describe('TokenModel', () => {
         const rootTokenId = randomUUID();
         const expiresAt = dayjs().add(2, 'hours');
 
-        const model = TokenModel.create(new Id(id), tokenHash, new Id(userId), new Id(rootTokenId), now, expiresAt, 'LOGIN');
+        const model = TokenModel.create(
+          new Id(id),
+          tokenHash,
+          new Id(userId),
+          new Id(rootTokenId),
+          now,
+          expiresAt,
+          'LOGIN',
+        );
 
         expect(model).toBeInstanceOf(TokenModel);
         expect(model.id.toString()).toBe(id);
@@ -35,7 +43,15 @@ describe('TokenModel', () => {
         const rootTokenId = randomUUID();
         const expiresAt = dayjs().add(2, 'hours');
 
-        const model = TokenModel.create(new Id(id), tokenHash, new Id(userId), new Id(rootTokenId), now, expiresAt, 'LOGIN');
+        const model = TokenModel.create(
+          new Id(id),
+          tokenHash,
+          new Id(userId),
+          new Id(rootTokenId),
+          now,
+          expiresAt,
+          'LOGIN',
+        );
 
         const events = model.pullEvents();
         expect(events).toHaveLength(1);
@@ -78,9 +94,9 @@ describe('TokenModel', () => {
         const rootTokenId = new Id(randomUUID());
         const expiresAt = dayjs().add(2, 'hours');
 
-        const model = TokenModel.create(id, tokenHash,userId, rootTokenId, now, expiresAt, 'LOGIN');
+        const model = TokenModel.create(id, tokenHash, userId, rootTokenId, now, expiresAt, 'LOGIN');
 
-        expect(model.isValid( new Id(randomUUID()), dayjs())).toBe(false);
+        expect(model.isValid(new Id(randomUUID()), dayjs())).toBe(false);
       });
 
       test('it should return false for a used token', () => {
@@ -107,7 +123,15 @@ describe('TokenModel', () => {
         const rootTokenId = randomUUID();
         const expiresAt = dayjs().add(2, 'hours');
 
-        const model = TokenModel.create(new Id(id), tokenHash, new Id(userId), new Id(rootTokenId), now, expiresAt, 'LOGIN');
+        const model = TokenModel.create(
+          new Id(id),
+          tokenHash,
+          new Id(userId),
+          new Id(rootTokenId),
+          now,
+          expiresAt,
+          'LOGIN',
+        );
         const usedAt = dayjs().add(1, 'hour');
         model.use(usedAt);
 

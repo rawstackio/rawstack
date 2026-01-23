@@ -1,5 +1,5 @@
 import { ValidationException } from '~/common/domain/exception/validation.exception';
-import {randomUUID} from "crypto";
+import { randomUUID } from 'crypto';
 
 export class Id {
   private readonly value: string;

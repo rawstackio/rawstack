@@ -4,7 +4,7 @@ import { UserRepositoryInterface } from '~/user/domain/model/user/user-repositor
 import { objectToUserDto, UserDto } from '~/common/application/query/user/dto/user.dto';
 import DeserializationException from '~/common/application/exception/deserialization.exception';
 import { UserRoles } from '~/common/domain/enum/user-roles';
-import { Id } from "~/common/domain/model/value-object/id";
+import { Id } from '~/common/domain/model/value-object/id';
 
 @Injectable()
 export class UserDtoProvider {
@@ -46,7 +46,7 @@ export class UserDtoProvider {
     const uncachedIds = ids.filter((_id, index) => !dtos[index]);
 
     if (uncachedIds.length) {
-      const uncachedUsers = await this.repository.findByIds(uncachedIds.map(item => new Id(item)));
+      const uncachedUsers = await this.repository.findByIds(uncachedIds.map((item) => new Id(item)));
 
       for (const uncachedUser of uncachedUsers) {
         const dto = uncachedUser.dto;

@@ -6,8 +6,8 @@ import { UserRepositoryInterface } from '~/user/domain/model/user/user-repositor
 import { randomUUID } from 'crypto';
 import { PrismaService } from '~/common/infrastructure/persistence/prisma/prisma.service';
 import { UserRoles } from '~/common/domain/enum/user-roles';
-import {Id} from "~/common/domain/model/value-object/id";
-import {Email} from "~/common/domain/model/value-object/email";
+import { Id } from '~/common/domain/model/value-object/id';
+import { Email } from '~/common/domain/model/value-object/email';
 
 class UserProvider {
   public ids: string[] = [];
