@@ -60,6 +60,8 @@ get:
 post:
   summary: Creates a new User
   tags: [ user ]
+  security:
+    - BearerToken: [ ]
   operationId: createUser
   requestBody:
     required: true

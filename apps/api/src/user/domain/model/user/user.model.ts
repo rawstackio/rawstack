@@ -110,20 +110,20 @@ export class UserModel extends DomainAbstractRoot {
     return this;
   }
 
-  addRoles(updatedAt: Dayjs, roles: UserRoles[]): UserModel {
-    this._roles = Array.from(new Set([...this.roles, ...roles]));
-    this._updatedAt = updatedAt;
+  updateRoles(updatedAt: Dayjs, roles: UserRoles[]): UserModel {
+    const rolesAreEqual = this.roles.length === roles.length && this.roles.every((role) => roles.includes(role));
 
-    this.apply(new UserRolesWereUpdated(this.id.toString(), updatedAt.toDate(), this.dto, roles));
+    if (rolesAreEqual) {
+      return this;
+    }
 
-    return this;
-  }
+    const validRoles = Object.values(UserRoles);
+    const invalidRoles = roles.filter((role) => !validRoles.includes(role));
 
-  removeRoles(updatedAt: Dayjs, roles: UserRoles[]): UserModel {
-    this._roles = this.roles.filter((role) => {
-      return !roles.includes(role);
-    });
-
+    if (invalidRoles.length > 0) {
+      throw new ValidationException(`Invalid roles: ${invalidRoles.join(', ')}`);
+    }
+    this._roles = roles;
     this._updatedAt = updatedAt;
 
     this.apply(new UserRolesWereUpdated(this.id.toString(), updatedAt.toDate(), this.dto, roles));

@@ -1,0 +1,7 @@
+*.ts
+!*.d.ts
+tsconfig.json
+.env
+.env.example
+README.md
+test

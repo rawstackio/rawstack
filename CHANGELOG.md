@@ -143,3 +143,50 @@ The CDK stack is designed for development and testing environments. Production c
 For setup instructions, see:
 - `infrastructure/core-stack/README.md`
 - `apps/api/README.md`
+
+## [v0.1.0-alpha.5] - 2026-01-31
+### 🚀 Overview
+This alpha introduces the **Admin Infrastructure Stack** using **AWS CDK**, along with bug fixes and refactoring across the API and Admin Dashboard.
+
+The focus of this release is extending infrastructure automation for the admin dashboard deployment, improving code quality through refactoring, and resolving bugs discovered during development.
+
+### ✨ Added
+- **Admin Stack** (`infrastructure/admin-stack`) — AWS CDK infrastructure for Admin Dashboard
+    - S3 bucket for static hosting
+    - CloudFront distribution for CDN and HTTPS
+    - Route 53 integration for custom domain support
+    - Automated deployment pipeline
+
+### 🐛 Fixed
+- **API Core** bug fixes
+    - Resolved issues with user role management
+    - Fixed array equality comparison in domain models
+- **Admin Dashboard** bug fixes and improvements
+    - Fixed password update flow
+    - Resolved form validation issues
+
+### ♻️ Refactored
+- **Admin Dashboard** code improvements
+    - Extracted API mutations into custom hooks (`useCreateUser`, `useUpdateUser`, `useDeleteUser`, `useGetUser`)
+    - Extracted password mutations into custom hooks (`useUpdatePassword`, `usePasswordResetRequest`)
+    - Decoupled UI components from API and storage layer
+    - Improved separation of concerns following consistent hook patterns
+
+### 🧱 Scope
+Included in this release:
+- `infrastructure/admin-stack` — AWS CDK Admin Infrastructure *(new)*
+- `apps/api` — RawStack API Core (bug fixes)
+- `apps/admin` — Admin Dashboard (refactoring + bug fixes)
+- `apps/app` — RawStack Mobile App
+- `apps/web` — Public Website
+- `infrastructure/core-stack` — AWS CDK Core Infrastructure
+
+### ⚙️ Notes
+This is a **maintenance and infrastructure alpha**.  
+The admin stack follows the same CDK patterns established in the core stack. Custom hooks in the admin dashboard provide better testability and maintainability.
+
+For setup instructions, see:
+- `infrastructure/admin-stack/README.md`
+- `infrastructure/core-stack/README.md`
+- `apps/api/README.md`
+- `apps/admin/README.md`

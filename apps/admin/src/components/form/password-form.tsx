@@ -1,13 +1,11 @@
+import { z } from 'zod';
 import { toast } from 'sonner';
 import { useForm, SubmitHandler } from 'react-hook-form';
-import { useMutation } from '@tanstack/react-query';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import Api from '@/lib/api/api.ts';
 import { Button } from '@/components/ui/button.tsx';
-import { useAuth } from '@/lib/context/auth-context.tsx';
 import { Input } from '@/components/ui/input.tsx';
 import { Error } from '@/components/form/error.tsx';
+import { useUpdatePassword } from '@/hooks/password/use-update-password.ts';
 
 const schema = z
   .object({
@@ -28,20 +26,13 @@ interface Props {
 }
 
 export function PasswordForm({ onSuccess }: Props) {
-  const { user } = useAuth();
-
-  const updatePasswordMutation = useMutation({
-    mutationFn: (data: Inputs) => {
-      if (!user) {
-        return Promise.reject('User not set');
-      }
-      return Api.user.updateUser(user.id, {
-        password: data.password,
-      });
-    },
+  const { updatedPassword } = useUpdatePassword({
     onSuccess: () => {
-      toast.success(`Your password has been updated`);
+      toast.success('Your password has been updated');
       onSuccess();
+    },
+    onError: () => {
+      toast.success('Oops! Something went wrong');
     },
   });
 
@@ -52,7 +43,7 @@ export function PasswordForm({ onSuccess }: Props) {
   } = useForm<Inputs>({ resolver: zodResolver(schema) });
 
   const onSubmit: SubmitHandler<Inputs> = async (data) => {
-    updatePasswordMutation.mutate(data);
+    updatedPassword(data);
   };
 
   return (

@@ -1,53 +1,23 @@
-import Template from '@/components/layout/template.tsx';
-
-import Api from '@/lib/api/api.ts';
-import { useQuery, keepPreviousData } from '@tanstack/react-query';
-import UserModel from '@/lib/model/user-model.ts';
-import UserTable from '@/components/user/user-table.tsx';
 import { useState } from 'react';
+import Template from '@/components/layout/template.tsx';
+import UserTable from '@/components/user/user-table.tsx';
+import { useListUsers } from '@/hooks/user/use-list-users.ts';
 
 export const Users = () => {
   const [pagination, setPagination] = useState({ page: 1, perPage: 10 });
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState<{ orderBy?: string; order?: 'asc' | 'desc' }>({});
-  const [roleFilter, setRoleFilter] = useState<string | undefined>(undefined);
-  // const [perPage, setPerPage] = useState(10);
+  const [sortBy, setSortBy] = useState<{ orderBy?: 'createdAt' | 'updatedAt' | 'email'; order?: 'DESC' | 'ASC' }>({});
+  const [roleFilter, setRoleFilter] = useState<'ADMIN' | 'VERIFIED_USER' | undefined>(undefined);
 
-  const {
-    // isPending,
-    // isError,
-    data: users,
-    // error,
-  } = useQuery({
-    queryKey: ['users', pagination.page, pagination.perPage, searchQuery, sortBy.orderBy, sortBy.order, roleFilter],
-    queryFn: async () => {
-      console.log('fetching users.....');
-      const data = await Api.user.listUsers(
-        pagination.page,
-        pagination.perPage,
-        searchQuery || undefined,
-        sortBy.orderBy,
-        sortBy.order,
-        roleFilter,
-      );
-      return data.data;
-    },
-    select: (data) => {
-      const totalItems = data.meta.pagination.totalItems;
-      const perPage = data.meta.pagination.perPage;
-      const totalPages = Math.ceil(totalItems / perPage);
-      return {
-        page: data.meta.pagination.page,
-        perPage,
-        totalPages,
-        totalItems,
-        items: data.items.map((item) => UserModel.createFromApiUser(item)),
-      };
-    },
-    placeholderData: keepPreviousData, // don't have 0 rows flash while changing pages/loading next page
+  const { users, pagination: userPagination } = useListUsers({
+    page: pagination.page,
+    perPage: pagination.perPage,
+    searchQuery,
+    roleFilter,
+    orderBy: sortBy.orderBy,
+    order: sortBy.order,
   });
 
-  console.log({ users });
   if (!users) {
     return <div>Loading...</div>;
   }
@@ -61,15 +31,9 @@ export const Users = () => {
         </div>
         <div className="mx-auto w-full max-w-6xl">
           <UserTable
-            data={users.items}
-            pagination={{
-              page: users.page,
-              perPage: users.perPage,
-              totalPages: users.totalPages,
-              totalItems: users.totalItems,
-            }}
+            data={users}
+            pagination={userPagination}
             onPaginationChange={(page, perPage) => {
-              console.log({ page, perPage });
               setPagination({ page, perPage });
             }}
             searchQuery={searchQuery}
