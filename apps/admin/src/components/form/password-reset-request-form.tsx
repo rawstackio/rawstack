@@ -1,15 +1,14 @@
-import { toast } from 'sonner';
-import { useForm, SubmitHandler } from 'react-hook-form';
-import { ComponentProps } from 'react';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useMutation } from '@tanstack/react-query';
-import Api from '@/lib/api/api.ts';
-import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
+import { ComponentProps } from 'react';
+import { useForm, SubmitHandler } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { cn, onError } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Error } from '@/components/form/error';
+import { useCreatePasswordResetRequest } from '@/hooks/password/use-create-password-reset-request.ts';
 
 const schema = z.object({
   email: z.string().email(),
@@ -17,18 +16,9 @@ const schema = z.object({
 type Inputs = z.TypeOf<typeof schema>;
 
 export function PasswordResetRequestForm({ className, ...props }: ComponentProps<'div'>) {
-  const createPasswordResetMutation = useMutation({
-    mutationFn: (data: Inputs) => {
-      return Api.auth.createToken({
-        email: data.email,
-      });
-    },
-    onSuccess: (_, variables) => {
-      toast.success(` A password reset link has been sent to ${variables.email}`);
-    },
-    onError: () => {
-      toast.error(`Oops something went wrong`);
-    },
+  const { createPasswordResetRequest } = useCreatePasswordResetRequest({
+    onSuccess: (email: string) => toast.success(`A password reset link has been sent to ${email}`),
+    onError,
   });
 
   const {
@@ -38,11 +28,7 @@ export function PasswordResetRequestForm({ className, ...props }: ComponentProps
   } = useForm<Inputs>({ resolver: zodResolver(schema) });
 
   const onSubmit: SubmitHandler<Inputs> = async (data) => {
-    try {
-      createPasswordResetMutation.mutate(data);
-    } catch (_: unknown) {
-      toast.error('Something went wrong!');
-    }
+    createPasswordResetRequest(data);
   };
 
   return (

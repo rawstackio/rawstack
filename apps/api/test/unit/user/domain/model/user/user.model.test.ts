@@ -93,10 +93,10 @@ describe('UserModel', () => {
     });
   });
 
-  describe('addRoles', () => {
-    test('should add new roles and add event', () => {
+  describe('updateRoles', () => {
+    test('should update roles and add event', () => {
       const updatedAt = now.add(4, 'day');
-      model.addRoles(updatedAt, [UserRoles.Admin]);
+      model.updateRoles(updatedAt, [UserRoles.Admin]);
 
       expect(model.roles).toContain(UserRoles.Admin);
       expect(model.updatedAt).toBe(updatedAt);
@@ -105,23 +105,28 @@ describe('UserModel', () => {
       expect(events.some((e) => e instanceof UserRolesWereUpdated)).toBe(true);
     });
 
-    test('should not add duplicate roles', () => {
+    test('should replace existing roles with new roles', () => {
       const updatedAt = now.add(5, 'day');
-      model.addRoles(updatedAt, [UserRoles.Admin]);
-      model.addRoles(updatedAt, [UserRoles.Admin]);
-      expect(model.roles.filter((r) => r === UserRoles.Admin).length).toBe(1);
-    });
-  });
+      model.updateRoles(updatedAt, [UserRoles.Admin]);
+      model.updateRoles(updatedAt, [UserRoles.VerifiedUser]);
 
-  describe('removeRoles', () => {
-    test('should remove roles and add event', () => {
-      const updatedAt = now.add(6, 'day');
-      model.addRoles(updatedAt, [UserRoles.Admin]);
-      model.removeRoles(updatedAt, [UserRoles.Admin]);
+      expect(model.roles).toContain(UserRoles.VerifiedUser);
       expect(model.roles).not.toContain(UserRoles.Admin);
+    });
+
+    test('should throw ValidationException for invalid roles', () => {
+      const updatedAt = now.add(6, 'day');
+      expect(() => model.updateRoles(updatedAt, ['INVALID_ROLE' as UserRoles])).toThrow(ValidationException);
+    });
+
+    test('should not add event if roles are the same', () => {
+      const updatedAt = now.add(7, 'day');
+      model.updateRoles(updatedAt, [UserRoles.Admin]);
+      model.pullEvents(); // clear events
+      model.updateRoles(updatedAt, [UserRoles.Admin]);
 
       const events = model.pullEvents();
-      expect(events.some((e) => e instanceof UserRolesWereUpdated)).toBe(true);
+      expect(events.some((e) => e instanceof UserRolesWereUpdated)).toBe(false);
     });
   });
 

@@ -40,7 +40,7 @@ export class TokenResponseBuilder {
       return actionResponse;
     }
 
-    const accessTokenTtlSeconds = this.config.get<number>('ACCESS_TOKEN_TTL')!;
+    const accessTokenTtlSeconds = Number(this.config.get<number>('ACCESS_TOKEN_TTL')!);
     const accessTokenExpiresAt = dayjs().add(accessTokenTtlSeconds, 'seconds');
 
     const payload = { sub: token.userId.toString(), email };
@@ -53,7 +53,7 @@ export class TokenResponseBuilder {
     return {
       item: {
         accessToken: accessToken,
-        ttlSeconds: Number(accessTokenTtlSeconds),
+        ttlSeconds: accessTokenTtlSeconds,
         expiresAt: accessTokenExpiresAt.toDate(),
         refreshToken: this.hashRepository.findByTokenHash(token.tokenHash),
       },

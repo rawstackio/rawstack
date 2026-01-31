@@ -1,16 +1,15 @@
-import * as React from 'react';
 import {
   IconChevronLeft,
   IconChevronRight,
   IconChevronsLeft,
   IconChevronsRight,
-  IconEye,
+  IconPencil,
   IconUserCircle,
   IconArrowUp,
   IconArrowDown,
   IconFilter,
 } from '@tabler/icons-react';
-import { ColumnDef, ColumnFiltersState, Row, flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
+import { ColumnDef, flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
 
 import { Badge } from '@/components/ui/badge.tsx';
 import { Button } from '@/components/ui/button.tsx';
@@ -22,15 +21,8 @@ import { PlusIcon } from 'lucide-react';
 import UserModel from '@/lib/model/user-model.ts';
 import { useApp } from '@/lib/context/app-context.tsx';
 
-function Item({ row }: { row: Row<UserModel> }) {
-  return (
-    <TableRow className="relative z-0 data-[dragging=true]:z-10 data-[dragging=true]:opacity-80">
-      {row.getVisibleCells().map((cell) => (
-        <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
-      ))}
-    </TableRow>
-  );
-}
+type OrderBy = 'createdAt' | 'updatedAt' | 'email';
+type Order = 'DESC' | 'ASC';
 
 interface Props {
   data: UserModel[];
@@ -43,10 +35,10 @@ interface Props {
   onPaginationChange: (page: number, perPage: number) => void;
   searchQuery: string;
   onSearchChange: (query: string) => void;
-  sortBy: { orderBy?: string; order?: 'asc' | 'desc' };
-  onSortChange: (sort: { orderBy?: string; order?: 'asc' | 'desc' }) => void;
-  roleFilter?: string;
-  onRoleFilterChange: (role: string | undefined) => void;
+  sortBy: { orderBy?: OrderBy; order?: Order };
+  onSortChange: (sort: { orderBy?: OrderBy; order?: Order }) => void;
+  roleFilter?: 'ADMIN' | 'VERIFIED_USER';
+  onRoleFilterChange: (role: 'ADMIN' | 'VERIFIED_USER' | undefined) => void;
 }
 
 const UserTable = ({
@@ -61,29 +53,27 @@ const UserTable = ({
   onRoleFilterChange,
 }: Props) => {
   const { setDrawerAction } = useApp();
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
 
-  const handleSort = (columnKey: string) => {
+  const handleSort = (columnKey: OrderBy) => {
     if (sortBy.orderBy === columnKey) {
-      // Toggle between asc, desc, and no sort
-      if (sortBy.order === 'asc') {
-        onSortChange({ orderBy: columnKey, order: 'desc' });
-      } else if (sortBy.order === 'desc') {
+      // Toggle between ASC, DESC, and no sort
+      if (sortBy.order === 'ASC') {
+        onSortChange({ orderBy: columnKey, order: 'DESC' });
+      } else if (sortBy.order === 'DESC') {
         onSortChange({});
       }
     } else {
-      onSortChange({ orderBy: columnKey, order: 'asc' });
+      onSortChange({ orderBy: columnKey, order: 'ASC' });
     }
   };
 
   const renderSortIcon = (columnKey: string) => {
     if (sortBy.orderBy !== columnKey) return null;
-    return sortBy.order === 'asc' ? <IconArrowUp size={16} /> : <IconArrowDown size={16} />;
+    return sortBy.order === 'ASC' ? <IconArrowUp size={16} /> : <IconArrowDown size={16} />;
   };
 
   const columns: ColumnDef<UserModel>[] = [
     {
-      // id: 'drag',
       header: ' ',
       cell: () => (
         <div>
@@ -98,25 +88,32 @@ const UserTable = ({
       enableSorting: true,
     },
     {
+      header: 'Status',
+      accessorKey: 'isVerified',
+      cell: ({ cell }) => {
+        const isVerified = cell.getValue<boolean>();
+        return (
+          <Badge variant={isVerified ? 'default' : 'secondary'} className="px-1.5">
+            {isVerified ? 'Verified' : 'Unverified'}
+          </Badge>
+        );
+      },
+    },
+    {
       header: 'Roles',
       accessorKey: 'roles',
-      cell: ({ cell }) => (
-        <div className="w-32">
-          {cell.getValue<string[]>().length > 0 ? (
-            cell.getValue<string[]>().map((role) => {
-              return (
-                <Badge variant="outline" className={`text-muted-foreground px-1.5`}>
-                  {role}
-                </Badge>
-              );
-            })
-          ) : (
-            <Badge variant="outline" className={`text-muted-foreground px-1.5`}>
-              UNVERIFIED_USER
-            </Badge>
-          )}
-        </div>
-      ),
+      cell: ({ cell }) => {
+        const roles = cell.getValue<string[]>();
+        return (
+          <div className="flex gap-1">
+            {roles.map((role) => (
+              <Badge key={role} variant="outline" className="text-muted-foreground px-1.5">
+                {role}
+              </Badge>
+            ))}
+          </div>
+        );
+      },
     },
     {
       accessorKey: 'dateCreated',
@@ -131,17 +128,18 @@ const UserTable = ({
     },
     {
       id: 'actions',
+      header: '',
       accessorKey: 'id',
       cell: ({ cell }) => {
         return (
-          <div>
+          <div className="text-right">
             <Button
               onClick={() => addUser(cell.getValue<string>())}
               variant="ghost"
-              className="data-[state=open]:bg-muted text-muted-foreground flex size-8"
-              size="icon"
+              size="sm"
             >
-              <IconEye />
+              <IconPencil size={16} />
+              Edit
             </Button>
           </div>
         );
@@ -153,24 +151,15 @@ const UserTable = ({
     data,
     columns,
     state: {
-      columnFilters,
       pagination: {
         pageIndex: pagination.page - 1,
         pageSize: pagination.perPage,
       },
     },
     getRowId: (row) => row.id.toString(),
-    onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
-    // getFilteredRowModel: getFilteredRowModel(),
-    // getPaginationRowModel: getPaginationRowModel(),
-    // getSortedRowModel: getSortedRowModel(),
-    // onPaginationChange: (updater) => {
-    //   const state = typeof updater === 'function' ? updater(table.getState().pagination) : updater;
-    //   onPaginationChange(state.pageIndex + 1, state.pageSize);
-    // },
-    manualPagination: true, //turn off client-side pagination
-    rowCount: pagination.totalPages,
+    manualPagination: true,
+    rowCount: pagination.totalItems,
   });
 
   const addUser = (userId?: string) => {
@@ -180,16 +169,18 @@ const UserTable = ({
   return (
     <div className="w-full flex-col justify-start gap-6">
       <div className="flex items-center justify-between pb-4 gap-4">
-        <div className="flex gap-2 flex-1 max-w-2xl">
+        <div className="flex gap-2">
           <Input
             placeholder="Search users..."
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="flex-1"
+            className="w-48"
           />
           <Select
             value={roleFilter || 'all'}
-            onValueChange={(value) => onRoleFilterChange(value === 'all' ? undefined : value)}
+            onValueChange={(value) =>
+              onRoleFilterChange(value === 'all' ? undefined : (value as 'ADMIN' | 'VERIFIED_USER'))
+            }
           >
             <SelectTrigger className="w-[180px]">
               <IconFilter size={16} className="mr-2" />
@@ -199,7 +190,6 @@ const UserTable = ({
               <SelectItem value="all">All Roles</SelectItem>
               <SelectItem value="ADMIN">Admin Only</SelectItem>
               <SelectItem value="VERIFIED_USER">Verified Users</SelectItem>
-              <SelectItem value="UNVERIFIED_USER">Unverified Users</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -215,18 +205,21 @@ const UserTable = ({
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id}>
                   {headerGroup.headers.map((header) => {
-                    const columnKey = header.column.columnDef.accessorKey as string;
+                    const columnKey = header.column.id;
                     const isSortable = columnKey === 'email' || columnKey === 'dateCreated';
+                    // Map column id to API orderBy value
+                    const orderByKey =
+                      columnKey === 'dateCreated' ? 'createdAt' : columnKey === 'email' ? 'email' : undefined;
 
                     return (
                       <TableHead key={header.id} colSpan={header.colSpan}>
-                        {header.isPlaceholder ? null : isSortable ? (
+                        {header.isPlaceholder ? null : isSortable && orderByKey ? (
                           <button
-                            onClick={() => handleSort(columnKey)}
+                            onClick={() => handleSort(orderByKey as OrderBy)}
                             className="flex items-center gap-1 hover:text-foreground"
                           >
                             {flexRender(header.column.columnDef.header, header.getContext())}
-                            {renderSortIcon(columnKey)}
+                            {renderSortIcon(orderByKey)}
                           </button>
                         ) : (
                           flexRender(header.column.columnDef.header, header.getContext())
@@ -239,11 +232,13 @@ const UserTable = ({
             </TableHeader>
             <TableBody className="**:data-[slot=table-cell]:first:w-8">
               {table.getRowModel().rows?.length ? (
-                <>
-                  {table.getRowModel().rows.map((row) => (
-                    <Item key={row.id} row={row} />
-                  ))}
-                </>
+                table.getRowModel().rows.map((row) => (
+                  <TableRow key={row.id} className="h-14">
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
+                    ))}
+                  </TableRow>
+                ))
               ) : (
                 <TableRow>
                   <TableCell colSpan={columns.length} className="h-24 text-center">
@@ -315,8 +310,6 @@ const UserTable = ({
                   onPaginationChange(pagination.page + 1, pagination.perPage);
                 }}
                 disabled={!(pagination.totalPages > pagination.page)}
-                // onClick={() => table.nextPage()}
-                // disabled={!table.getCanNextPage()}
               >
                 <span className="sr-only">Go to next page</span>
                 <IconChevronRight />

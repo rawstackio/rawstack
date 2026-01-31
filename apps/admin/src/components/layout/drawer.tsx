@@ -1,9 +1,9 @@
-import { useIsMobile } from '@/hooks/use-mobile.ts';
+import { XIcon } from 'lucide-react';
+import { useIsMobile } from '@/hooks/ui/use-mobile.ts';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer.tsx';
 import { Button } from '@/components/ui/button.tsx';
 import { useApp } from '@/lib/context/app-context.tsx';
 import { AccountForm } from '@/components/form/account-form.tsx';
-import { XIcon } from 'lucide-react';
 import { useAuth } from '@/lib/context/auth-context.tsx';
 
 export const DashboardDrawer = () => {
@@ -16,7 +16,7 @@ export const DashboardDrawer = () => {
 
     switch (drawerAction.form) {
       case 'account':
-        return `${drawerAction.entityId ? 'Edit' : 'Create'}${user.id === drawerAction.entityId ? ' Your' : ''} Account`;
+        return `${drawerAction.entityId ? 'Edit' : 'Create'}${user?.id === drawerAction.entityId ? ' Your' : ''} Account`;
       default:
         return drawerAction.entityId ? 'Edit' : 'Create';
     }
@@ -27,7 +27,7 @@ export const DashboardDrawer = () => {
   };
 
   return (
-    <Drawer direction={isMobile ? 'bottom' : 'right'} open={!!drawerAction}>
+    <Drawer direction={isMobile ? 'bottom' : 'right'} open={!!drawerAction} onOpenChange={(open) => !open && closeDrawer()}>
       <DrawerContent className={'border-l-rgb/10 dark:border-l-[rgba(125,125,125,0.05)]'}>
         <DrawerHeader className="p-0 bg-sidebar px-4 py-2 flex flex-row justify-between items-center">
           <Button variant="ghost" size="sm" onClick={closeDrawer}>
@@ -39,16 +39,6 @@ export const DashboardDrawer = () => {
           <DrawerTitle className={'pb-4'}>{getTitle()}</DrawerTitle>
           <AccountForm userId={drawerAction?.entityId ?? undefined} />
         </div>
-
-        {/*
-        <DrawerFooter>
-          <Button>Submit</Button>
-          <DrawerClose asChild>
-            <Button variant="outline" onClick={toggleDrawer}>
-              Done
-            </Button>
-          </DrawerClose>
-        </DrawerFooter>*/}
       </DrawerContent>
     </Drawer>
   );

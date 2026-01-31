@@ -37,7 +37,11 @@ export class UpdateUserService {
         throw new ForbiddenException('only admins can update users roles');
       }
 
-      user.addRoles(dateNow, roles);
+      if (actor.id === user.id) {
+        throw new ForbiddenException('users cannot update there own roles');
+      }
+
+      user.updateRoles(dateNow, roles);
     }
     if (password) {
       const hashedPassword = await argon.hash(password);
