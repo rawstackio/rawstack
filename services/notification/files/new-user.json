@@ -1,0 +1,12 @@
+{
+  "detail-type": "user.user.wasCreated",
+  "detail": {
+    "data": {
+      "id": "32b8d7b6-3fd6-44f9-8986-af89aacb2aaa",
+      "email": "hi@test.com",
+      "unverifiedEmail": "hi@test.com",
+      "roles": [],
+      "createdAt": "2026-02-05T09:48:41.038Z"
+    }
+  }
+}

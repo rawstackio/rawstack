@@ -1,0 +1,37 @@
+{
+  "name": "rawstack-notification-service",
+  "version": "v0.1.0-alpha.6",
+  "bin": {
+    "app-runner": "aws/bin/notification.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "test": "jest",
+    "cdk": "cdk"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.147",
+    "@types/jest": "^29.5.14",
+    "@types/node": "^22.15.3",
+    "@types/react": "^18.3.27",
+    "@types/react-dom": "^19.2.3",
+    "aws-cdk": "^2.237.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.4.6",
+    "ts-node": "^10.9.2",
+    "typescript": "~5.7.3"
+  },
+  "dependencies": {
+    "@react-email/components": "^0.0.31",
+    "aws-cdk-lib": "^2.237.0",
+    "constructs": "^10.4.5",
+    "dotenv": "^16.6.1",
+    "prettier": "^3.8.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-email": "^3.0.7",
+    "resend": "^4.8.0",
+    "twilio": "^5.12.0"
+  }
+}
