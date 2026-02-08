@@ -4,14 +4,14 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ComponentProps, useState } from 'react';
+import { ComponentProps } from 'react';
 import UserModel from '@/lib/model/UserModel';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import Api from '@/lib/api/Api';
 import { ApiError } from '@/lib/api/exception/errors';
 import { toast } from 'sonner';
+import { useUpdateAccount } from '@/hooks/user/use-update-account';
 
 type Props = {
   user: UserModel;
@@ -63,26 +63,19 @@ const schema = z
 type Inputs = z.infer<typeof schema>;
 
 export const AccountForm = ({ className, user, ...props }: Props) => {
-  const [isBusy, setIsBusy] = useState(false);
-
   const {
     register,
     handleSubmit,
     setError,
-    formState: { errors },
+    formState: { errors, isValid },
   } = useForm<Inputs>({ resolver: zodResolver(schema) });
 
-  const onSubmit = async (data: Inputs) => {
-    setIsBusy(true);
-    try {
-      await Api.user.updateUser(user.id, {
-        email: data.email,
-        password: data.password || undefined,
-      });
-
-      setIsBusy(false);
-    } catch (e: unknown) {
-      if (e instanceof ApiError && e.statusCode === 409) {
+  const { updateAccount, isBusy } = useUpdateAccount({
+    onSuccess: () => {
+      toast.success('Account updated successfully');
+    },
+    onError: (error: unknown) => {
+      if (error instanceof ApiError && error.statusCode === 409) {
         setError('email', {
           type: 'custom',
           message: 'A user with this email already exists',
@@ -90,8 +83,15 @@ export const AccountForm = ({ className, user, ...props }: Props) => {
       } else {
         toast.error('Something went wrong! Try again later!');
       }
-      setIsBusy(false);
-    }
+    },
+  });
+
+  const onSubmit = (data: Inputs) => {
+    updateAccount({
+      userId: user.id,
+      email: data.email,
+      password: data.password || undefined,
+    });
   };
 
   return (
@@ -125,7 +125,7 @@ export const AccountForm = ({ className, user, ...props }: Props) => {
               {errors.confirmPassword && <span className={'text-sm'}>{errors.confirmPassword.message}</span>}
             </div>
             <div className="flex flex-col gap-3">
-              <Button type="submit" className="w-full" disabled={isBusy}>
+              <Button type="submit" className="w-full" disabled={isBusy || !isValid}>
                 Update
               </Button>
               <Button className="w-full" variant={'outline'}>

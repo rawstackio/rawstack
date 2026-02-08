@@ -43,11 +43,11 @@ const Account = () => {
         </Breadcrumb>
       </div>
 
-      <div className={'px-6 py-6'}>
+      <div className={'mx-auto w-full max-w-md px-6 py-6'}>
         <h1 className={'font-oswald text-3xl font-bold pb-2'}>Account Settings</h1>
         <h2>Manage your account settings and set e-mail preferences.</h2>
+        <div className={'pt-6'}>{user && <AccountForm user={user} />}</div>
       </div>
-      <div className={''}>{user && <AccountForm user={user} />}</div>
     </PageWrapper>
   );
 };

@@ -190,3 +190,41 @@ For setup instructions, see:
 - `infrastructure/core-stack/README.md`
 - `apps/api/README.md`
 - `apps/admin/README.md`
+
+## [v0.1.0-alpha.6] - 2026-02-11
+### 🚀 Overview
+This alpha introduces the **Web Infrastructure Stack** using **AWS CDK** and the **Notification Microservice** — the first standalone microservice in the RawStack platform.
+
+The focus of this release is extending infrastructure automation for the public website deployment and establishing the foundation for event-driven microservices architecture.
+
+### ✨ Added
+- **Web Stack** (`infrastructure/web-stack`) — AWS CDK infrastructure for Public Website
+    - S3 bucket for static hosting
+    - CloudFront distribution for CDN and HTTPS
+    - Route 53 integration for custom domain support
+    - Automated deployment pipeline
+- **Notification Microservice** (`services/notification`) — Event-driven notification service
+    - Email, push, and in-app notification support
+    - React email for email rendering
+
+### 🧱 Scope
+Included in this release:
+- `infrastructure/web-stack` — AWS CDK Web Infrastructure *(new)*
+- `services/notification` — Notification Microservice *(new)*
+- `apps/api` — RawStack API Core
+- `apps/admin` — Admin Dashboard
+- `apps/app` — RawStack Mobile App
+- `apps/web` — Public Website
+- `infrastructure/core-stack` — AWS CDK Core Infrastructure
+- `infrastructure/admin-stack` — AWS CDK Admin Infrastructure
+
+### ⚙️ Notes
+This is an **infrastructure and services alpha**.
+The web stack follows the same CDK patterns established in the admin stack. The notification microservice introduces the first event-driven service, setting patterns for future microservices.
+
+For setup instructions, see:
+- `infrastructure/web-stack/README.md`
+- `services/notification/README.md`
+- `infrastructure/core-stack/README.md`
+- `apps/api/README.md`
+

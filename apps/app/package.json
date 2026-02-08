@@ -1,6 +1,6 @@
 {
-  "name": "rawstack",
-  "version": "0.1.0",
+  "name": "rawstack-app",
+  "version": "v0.1.0-alpha.6",
   "private": true,
   "scripts": {
     "android": "react-native run-android",

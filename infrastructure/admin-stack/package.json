@@ -1,6 +1,6 @@
 {
   "name": "rawstack-admin-stack",
-  "version": "v0.1.0-alpha.5",
+  "version": "v0.1.0-alpha.6",
   "bin": {
     "admin": "bin/admin.js"
   },

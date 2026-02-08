@@ -602,6 +602,38 @@ export class CoreStack extends cdk.Stack {
       exportName: `${this.stackName}-VpcId`,
     });
 
+    // Export AZs and subnet IDs for cross-stack imports (e.g., web-stack/admin-stack).
+    // We export as a comma-separated string for easy consumption via Fn.importValue.
+    new CfnOutput(this, 'VpcAvailabilityZones', {
+      value: cdk.Fn.join(',', this.vpc.availabilityZones),
+      description: 'Comma-separated list of VPC availability zones',
+      exportName: `${this.stackName}-VpcAvailabilityZones`,
+    });
+
+    new CfnOutput(this, 'PublicSubnet1Id', {
+      value: this.vpc.publicSubnets[0].subnetId,
+      description: 'ID of public subnet 1',
+      exportName: `${this.stackName}-PublicSubnet1Id`,
+    });
+
+    new CfnOutput(this, 'PublicSubnet2Id', {
+      value: this.vpc.publicSubnets[1].subnetId,
+      description: 'ID of public subnet 2',
+      exportName: `${this.stackName}-PublicSubnet2Id`,
+    });
+
+    new CfnOutput(this, 'PrivateSubnet1Id', {
+      value: this.vpc.privateSubnets[0].subnetId,
+      description: 'ID of private subnet 1',
+      exportName: `${this.stackName}-PrivateSubnet1Id`,
+    });
+
+    new CfnOutput(this, 'PrivateSubnet2Id', {
+      value: this.vpc.privateSubnets[1].subnetId,
+      description: 'ID of private subnet 2',
+      exportName: `${this.stackName}-PrivateSubnet2Id`,
+    });
+
     new CfnOutput(this, 'EcsClusterName', {
       value: this.cluster.clusterName,
       description: 'ECS Cluster name',

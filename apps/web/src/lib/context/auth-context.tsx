@@ -68,7 +68,7 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
     loadUserFromLocalStorage();
-  }, [user]);
+  });
 
   const openAuthModal = () => {
     setAuthModalIsOpen(true);

@@ -8,6 +8,10 @@ async function bootstrap() {
       json: true,
     }),
   });
+
+  // enable trust proxy if behind a reverse proxy (e.g., Nginx, AWS ALB)
+  app.getHttpAdapter().getInstance().set('trust proxy', 1);
+
   app.enableCors();
   app.enableVersioning({
     type: VersioningType.URI,

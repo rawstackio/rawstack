@@ -1,10 +1,10 @@
 'use client';
 
-import { ComponentProps, useEffect, useRef, useState } from 'react';
+import { ComponentProps, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { useAuth } from '@/lib/context/auth-context';
+import { useAutoLogin } from '@/hooks/auth/use-auto-login';
 
 interface Props extends ComponentProps<'div'> {
   token: string;
@@ -13,10 +13,24 @@ interface Props extends ComponentProps<'div'> {
 }
 
 export function AutoLoginForm({ className, token, email, action }: Props) {
-  const [isBusy, setIsBusy] = useState(true);
-  const { login } = useAuth();
   const router = useRouter();
   const hasAttemptedLogin = useRef(false);
+
+  const { autoLogin, isBusy } = useAutoLogin({
+    onSuccess: () => {
+      toast.success('Auto login successful!');
+      if (action === 'password') {
+        router.push('/set-password');
+      } else {
+        router.push('/');
+      }
+    },
+    onError: (error) => {
+      console.error('Auto login failed:', error);
+      toast.error('Auto login failed, please login manually.');
+      router.push('/login');
+    },
+  });
 
   useEffect(() => {
     // Prevent multiple login attempts
@@ -25,27 +39,8 @@ export function AutoLoginForm({ className, token, email, action }: Props) {
     }
     hasAttemptedLogin.current = true;
 
-    const performAutoLogin = async () => {
-      try {
-        await login({ email, refreshToken: token });
-        setIsBusy(false);
-        toast.success('Auto login successful!');
-
-        if (action === 'password') {
-          router.push('/set-password');
-        } else {
-          router.push('/');
-        }
-      } catch (error) {
-        console.error('Auto login failed:', error);
-        setIsBusy(false);
-        toast.error('Auto login failed, please login manually.');
-        router.push('/login');
-      }
-    };
-
-    performAutoLogin();
-  }, [email, token, action, login, router]);
+    autoLogin({ email, token });
+  }, [email, token, autoLogin]);
 
   return (
     <div className={cn('flex align-middle justify-center py-8', className)}>
