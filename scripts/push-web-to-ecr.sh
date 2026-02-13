@@ -13,12 +13,15 @@ NC='\033[0m' # No Color
 # Store the project root directory
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
+AWS_ENV_FILE="$PROJECT_ROOT/infrastructure/aws/.env"
+
 # Load environment variables
-if [ -f "$PROJECT_ROOT/infrastructure/web-stack/.env" ]; then
-  export $(cat "$PROJECT_ROOT/infrastructure/web-stack/.env" | grep -v '^#' | xargs)
-  echo -e "${GREEN}✓ Loaded environment variables from infrastructure/web-stack/.env${NC}"
+if [ -f "$AWS_ENV_FILE" ]; then
+  # shellcheck disable=SC2046
+  export $(grep -v '^#' "$AWS_ENV_FILE" | xargs)
+  echo -e "${GREEN}✓ Loaded environment variables from infrastructure/aws/.env${NC}"
 else
-  echo -e "${RED}✗ Error: .env file not found at infrastructure/web-stack/.env${NC}"
+  echo -e "${RED}✗ Error: .env file not found at infrastructure/aws/.env${NC}"
   exit 1
 fi
 
@@ -33,8 +36,10 @@ if [ -z "$AWS_ACCOUNT_ID" ]; then
   exit 1
 fi
 
-# Set the repository name - can be overridden with AWS_ECR_REPOSITORY_NAME
-WEB_ECR_REPOSITORY_NAME="${AWS_ECR_REPOSITORY_NAME:-rawstack/web}"
+if [ -z "$WEB_ECR_REPOSITORY_NAME" ]; then
+  echo -e "${RED}✗ Error: WEB_ECR_REPOSITORY_NAME not set${NC}"
+  exit 1
+fi
 
 # Set variables
 TAG=${1:-latest}

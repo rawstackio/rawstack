@@ -13,12 +13,15 @@ NC='\033[0m' # No Color
 # Store the project root directory
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
+AWS_ENV_FILE="$PROJECT_ROOT/infrastructure/aws/.env"
+
 # Load environment variables
-if [ -f "$PROJECT_ROOT/infrastructure/core-stack/.env" ]; then
-  export $(cat "$PROJECT_ROOT/infrastructure/core-stack/.env" | grep -v '^#' | xargs)
-  echo -e "${GREEN}✓ Loaded environment variables from infrastructure/core-stack/.env${NC}"
+if [ -f "$AWS_ENV_FILE" ]; then
+  # shellcheck disable=SC2046
+  export $(grep -v '^#' "$AWS_ENV_FILE" | xargs)
+  echo -e "${GREEN}✓ Loaded environment variables from infrastructure/aws/.env${NC}"
 else
-  echo -e "${RED}✗ Error: .env file not found at infrastructure/core-stack/.env${NC}"
+  echo -e "${RED}✗ Error: .env file not found at infrastructure/aws/.env${NC}"
   exit 1
 fi
 
@@ -33,14 +36,14 @@ if [ -z "$AWS_ACCOUNT_ID" ]; then
   exit 1
 fi
 
-if [ -z "$AWS_ECR_REPOSITORY_NAME" ]; then
-  echo -e "${RED}✗ Error: AWS_ECR_REPOSITORY_NAME not set${NC}"
+if [ -z "$CORE_ECR_REPOSITORY_NAME" ]; then
+  echo -e "${RED}✗ Error: CORE_ECR_REPOSITORY_NAME not set${NC}"
   exit 1
 fi
 
 # Set variables
 TAG=${1:-latest}
-IMAGE_NAME="$AWS_ECR_REPOSITORY_NAME"
+IMAGE_NAME="$CORE_ECR_REPOSITORY_NAME"
 ECR_REGISTRY="$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com"
 FULL_IMAGE_NAME="$ECR_REGISTRY/$IMAGE_NAME:$TAG"
 
@@ -82,11 +85,11 @@ fi
 # Build Docker image
 echo -e "${YELLOW}Building Docker image...${NC}"
 docker build \
-  --build-arg ACCESS_TOKEN_TTL="${ACCESS_TOKEN_TTL:-1500}" \
-  --build-arg REFRESH_TOKEN_TTL="${REFRESH_TOKEN_TTL:-604800}" \
-  --build-arg PASSWORD_RESET_TOKEN_TTL="${PASSWORD_RESET_TOKEN_TTL:-604800}" \
-  --build-arg EMAIL_VERIFICATION_TOKEN_TTL="${EMAIL_VERIFICATION_TOKEN_TTL:-604800}" \
-  --build-arg CACHE_TTL="${CACHE_TTL:-31499600}" \
+  --build-arg ACCESS_TOKEN_TTL="${CORE_ACCESS_TOKEN_TTL:-1500}" \
+  --build-arg REFRESH_TOKEN_TTL="${CORE_REFRESH_TOKEN_TTL:-604800}" \
+  --build-arg PASSWORD_RESET_TOKEN_TTL="${CORE_PASSWORD_RESET_TOKEN_TTL:-604800}" \
+  --build-arg EMAIL_VERIFICATION_TOKEN_TTL="${CORE_EMAIL_VERIFICATION_TOKEN_TTL:-604800}" \
+  --build-arg CACHE_TTL="${CORE_CACHE_TTL:-31499600}" \
   -t "$IMAGE_NAME:$TAG" .
 
 if [ $? -ne 0 ]; then
@@ -114,4 +117,4 @@ echo -e "${GREEN}✓ Successfully pushed image to ECR!${NC}"
 echo -e "Image: ${GREEN}$FULL_IMAGE_NAME${NC}"
 echo ""
 echo -e "${YELLOW}Next steps:${NC}"
-echo "1. Deploy the CDK stack: cd infrastructure/core-stack && npx cdk deploy"
+echo "1. Deploy the CDK stack: cd infrastructure/aws && npx cdk deploy"

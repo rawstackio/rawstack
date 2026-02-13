@@ -1,8 +1,9 @@
 {
-  "name": "rawstack-web-stack",
+  "name": "rawstack-infrastructure",
   "version": "v0.1.0-alpha.6",
+  "description": "Unified CDK infrastructure for RawStack",
   "bin": {
-    "web": "bin/web.js"
+    "app": "bin/app.js"
   },
   "scripts": {
     "build": "tsc",
@@ -26,6 +27,7 @@
     "aws-cdk-lib": "^2.235.1",
     "aws-lambda": "^1.0.7",
     "constructs": "^10.0.0",
-    "dotenv": "^16.4.5"
+    "dotenv": "^16.4.5",
+    "source-map-support": "^0.5.21"
   }
 }

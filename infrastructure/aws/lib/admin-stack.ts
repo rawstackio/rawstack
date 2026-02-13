@@ -74,19 +74,33 @@ export class AdminStack extends cdk.Stack {
    * Loads configuration from environment variables and validates required values
    */
   private loadAndValidateConfig(): AdminStackConfig {
-    const adminBuildPath = path.join(__dirname, '../../../apps/admin/dist');
+    const defaultAdminBuildPath = path.join(__dirname, '../../../apps/admin/dist');
+    const adminBuildPath = process.env.ADMIN_BUILD_PATH || defaultAdminBuildPath;
 
     // Validate build path exists (only in non-synth context for CI/CD compatibility)
     if (process.env.CDK_CONTEXT_JSON === undefined && !fs.existsSync(adminBuildPath)) {
       console.warn(
         `Warning: Admin build path does not exist: ${adminBuildPath}\n` +
-        `Make sure to build the admin app before deploying.`
+          `Make sure to build the admin app before deploying.`
       );
     }
 
+    const priceClass = (() => {
+      switch (process.env.ADMIN_CLOUDFRONT_PRICE_CLASS) {
+        case 'PRICE_CLASS_100':
+          return cloudfront.PriceClass.PRICE_CLASS_100;
+        case 'PRICE_CLASS_200':
+          return cloudfront.PriceClass.PRICE_CLASS_200;
+        case 'PRICE_CLASS_ALL':
+          return cloudfront.PriceClass.PRICE_CLASS_ALL;
+        default:
+          return AdminStack.DEFAULT_PRICE_CLASS;
+      }
+    })();
+
     const config: AdminStackConfig = {
       adminBuildPath,
-      priceClass: AdminStack.DEFAULT_PRICE_CLASS,
+      priceClass,
       environment: process.env.ENVIRONMENT || AdminStack.DEFAULT_ENVIRONMENT,
       enableDeletionProtection: process.env.ENABLE_DELETION_PROTECTION === 'true',
     };

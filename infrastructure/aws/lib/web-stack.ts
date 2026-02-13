@@ -13,6 +13,7 @@ import { Runtime } from 'aws-cdk-lib/aws-lambda';
 import * as cloudfront from "aws-cdk-lib/aws-cloudfront";
 import * as origins from "aws-cdk-lib/aws-cloudfront-origins";
 import * as logs from "aws-cdk-lib/aws-logs";
+import * as path from 'path';
 
 /**
  * Configuration interface for WebStack
@@ -21,7 +22,6 @@ import * as logs from "aws-cdk-lib/aws-logs";
 interface WebStackConfig {
   // Required AWS configuration
   readonly ecrRepositoryName: string;
-  readonly coreStackName: string;
 
   // Infrastructure configuration
   readonly environment?: string;
@@ -29,9 +29,11 @@ interface WebStackConfig {
   readonly containerPort?: number;
   readonly enableDeletionProtection?: boolean;
   readonly cloudFrontPriceClass?: cloudfront.PriceClass;
+}
 
-  // Networking (optional; used when importing VPC from core-stack)
-  readonly availabilityZones?: string[];
+
+export interface WebStackProps extends cdk.StackProps {
+  vpc: ec2.IVpc;
 }
 
 /**
@@ -65,27 +67,16 @@ export class WebStack extends cdk.Stack {
   public readonly fargateService: ecsPatterns.ApplicationLoadBalancedFargateService;
   public readonly distribution: cloudfront.Distribution;
 
-  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
+  constructor(scope: Construct, id: string, props: WebStackProps) {
     super(scope, id, props);
+
+    this.vpc = props.vpc;
 
     // Load and validate configuration
     const config = this.loadAndValidateConfig();
 
     // Apply tags to all resources in this stack
     this.applyStackTags(config.environment || WebStack.DEFAULT_ENVIRONMENT);
-
-    // if configured use the same VPC as the code api and stack, otherwise use the default VPC (for testing)
-    if (!config.coreStackName) {
-     console.warn(
-       'CORE_STACK_NAME is not set. Using default VPC for testing purposes. ' +
-       'In production, please set CORE_STACK_NAME to import the VPC from core-stack.'
-     );
-      // For testing: use default VPC instead of importing from core-stack
-      this.vpc = ec2.Vpc.fromLookup(this, 'DefaultVpc', { isDefault: true });
-    } else {
-      console.log(`Importing VPC from core-stack: ${config.coreStackName}`);
-      this.vpc = this.importVpcFromCoreStack(config);
-    }
 
     // Create ECS cluster
     this.cluster = this.createEcsCluster();
@@ -113,34 +104,28 @@ export class WebStack extends cdk.Stack {
    * Loads configuration from environment variables and validates required values
    */
   private loadAndValidateConfig(): WebStackConfig {
-    const requiredEnvVars = ['AWS_ECR_REPOSITORY_NAME'];
+    const requiredEnvVars = ['WEB_ECR_REPOSITORY_NAME'];
 
     const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
 
     if (missingVars.length > 0) {
       throw new Error(
         `Missing required environment variables: ${missingVars.join(', ')}\n` +
-        `Please ensure all required variables are set in your .env file.`
+          `Please ensure all required variables are set in your .env file.`
       );
     }
 
-    const availabilityZones = process.env.AVAILABILITY_ZONES
-      ? process.env.AVAILABILITY_ZONES.split(',').map((z) => z.trim()).filter(Boolean)
-      : undefined;
-
     const config: WebStackConfig = {
-      ecrRepositoryName: process.env.AWS_ECR_REPOSITORY_NAME!,
-      coreStackName: process.env.CORE_STACK_NAME!,
+      ecrRepositoryName: process.env.WEB_ECR_REPOSITORY_NAME!,
       environment: process.env.ENVIRONMENT || WebStack.DEFAULT_ENVIRONMENT,
-      desiredTaskCount: process.env.DESIRED_TASK_COUNT
-        ? parseInt(process.env.DESIRED_TASK_COUNT)
+      desiredTaskCount: process.env.WEB_DESIRED_TASK_COUNT
+        ? parseInt(process.env.WEB_DESIRED_TASK_COUNT)
         : WebStack.DEFAULT_DESIRED_TASK_COUNT,
-      containerPort: process.env.CONTAINER_PORT
-        ? parseInt(process.env.CONTAINER_PORT)
+      containerPort: process.env.WEB_CONTAINER_PORT
+        ? parseInt(process.env.WEB_CONTAINER_PORT)
         : WebStack.DEFAULT_CONTAINER_PORT,
       enableDeletionProtection: process.env.ENABLE_DELETION_PROTECTION === 'true',
-      cloudFrontPriceClass: this.parseCloudFrontPriceClass(process.env.CLOUDFRONT_PRICE_CLASS),
-      availabilityZones,
+      cloudFrontPriceClass: this.parseCloudFrontPriceClass(process.env.WEB_CLOUDFRONT_PRICE_CLASS),
     };
 
     return config;
@@ -169,48 +154,6 @@ export class WebStack extends cdk.Stack {
     Tags.of(this).add('Environment', environment);
     Tags.of(this).add('ManagedBy', 'CDK');
     Tags.of(this).add('Application', 'WebStack');
-  }
-
-  /**
-   * Imports VPC from core-stack using the exported VPC ID
-   *
-   * @remarks
-   * This method imports the VPC created by core-stack using exported values.
-   * The core-stack must be deployed before deploying this stack.
-   */
-  private importVpcFromCoreStack(config: WebStackConfig): ec2.IVpc {
-    const vpcId = cdk.Fn.importValue(`${config.coreStackName}-VpcId`);
-
-    console.log({vpcId});
-
-    // This does an AWS lookup and imports correct AZs/subnets/route tables.
-    return ec2.Vpc.fromLookup(this, 'ImportedCoreVpc', { vpcId });
-
-    // Prefer AZs exported by core-stack.
-    // Fall back to explicit AZs from env var, then to legacy defaults.
-    // const exportedAzs = cdk.Fn.importValue(`${config.coreStackName}-VpcAvailabilityZones`);
-    // const availabilityZonesFromCore = cdk.Fn.split(',', exportedAzs);
-//
-    // const availabilityZones =
-    //   availabilityZonesFromCore && availabilityZonesFromCore.length > 0
-    //     ? availabilityZonesFromCore
-    //     : (config.availabilityZones && config.availabilityZones.length > 0
-    //         ? config.availabilityZones
-    //         : ['us-east-1a', 'us-east-1b']); // legacy fallback; prefer core-stack export or AVAILABILITY_ZONES
-//
-    // // Import VPC attributes including subnet IDs
-    // return ec2.Vpc.fromVpcAttributes(this, 'ImportedVpc', {
-    //   vpcId: vpcId,
-    //   availabilityZones,
-    //   privateSubnetIds: [
-    //     cdk.Fn.importValue(`${config.coreStackName}-PrivateSubnet1Id`),
-    //     cdk.Fn.importValue(`${config.coreStackName}-PrivateSubnet2Id`),
-    //   ],
-    //   publicSubnetIds: [
-    //     cdk.Fn.importValue(`${config.coreStackName}-PublicSubnet1Id`),
-    //     cdk.Fn.importValue(`${config.coreStackName}-PublicSubnet2Id`),
-    //   ],
-    // });
   }
 
   /**
@@ -316,15 +259,11 @@ export class WebStack extends cdk.Stack {
         publicLoadBalancer: true,
         desiredCount: config.desiredTaskCount || WebStack.DEFAULT_DESIRED_TASK_COUNT,
         listenerPort: 80,
-        // When using the core-stack VPC, keep tasks private and use NAT egress.
-        // When CORE_STACK_NAME isn't set, we're using the default VPC for testing.
-        // In that case we put tasks in public subnets with public IPs to avoid requiring NAT.
+        // WebStack uses the injected VPC from the core stack.
         taskSubnets: {
-          subnetType: config.coreStackName
-            ? ec2.SubnetType.PRIVATE_WITH_EGRESS
-            : ec2.SubnetType.PUBLIC,
+          subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS,
         },
-        assignPublicIp: !config.coreStackName,
+        assignPublicIp: false,
         securityGroups: [ecsServiceSecurityGroup],
         // Must be >= container healthCheck startPeriod to avoid tasks getting killed during startup.
         healthCheckGracePeriod: cdk.Duration.seconds(180),
@@ -440,7 +379,7 @@ export class WebStack extends cdk.Stack {
     // Create Lambda function for deployment
     const deploymentLambda = new NodejsFunction(this, 'WebDeploymentLambda', {
       runtime: Runtime.NODEJS_20_X,
-      entry: 'lambda/deployment-trigger.ts',
+      entry: path.join(__dirname, '../lambda/web-stack/deployment-trigger.ts'),
       handler: 'handler',
       role: lambdaRole,
       description: 'Triggers ECS service update on ECR image push',
