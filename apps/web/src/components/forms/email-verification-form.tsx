@@ -1,36 +1,25 @@
 'use client';
 
-import { ComponentProps, useEffect, useState } from 'react';
+import { ComponentProps, useEffect } from 'react';
 
 import { cn } from '@/lib/utils';
 import { Spinner } from '@/components/ui/spinner';
 import { AlertTriangle, ThumbsUp } from 'lucide-react';
-import Api from '@/lib/api/Api';
+import { useVerifyEmail } from '@/hooks/auth/use-verify-email';
 
 interface Props extends ComponentProps<'div'> {
   token: string;
 }
 
 export function EmailVerificationForm({ className, token }: Props) {
-  const [isBusy, setIsBusy] = useState(true);
-  const [success, setSuccess] = useState(false);
+  const { verifyEmail, isBusy, isSuccess } = useVerifyEmail();
 
   useEffect(() => {
-    Api.auth
-      .createActionRequest({
-        token,
-      })
-      .then(() => {
-        setIsBusy(false);
-        setSuccess(true);
-      })
-      .catch(() => {
-        setIsBusy(false);
-      });
-  }, [token]);
+    verifyEmail({ token });
+  }, [token, verifyEmail]);
 
   const renderResult = () => {
-    if (success) {
+    if (isSuccess) {
       return (
         <div className={'flex'}>
           <ThumbsUp />

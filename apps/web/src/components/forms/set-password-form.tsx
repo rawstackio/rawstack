@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { z } from 'zod';
 import { useForm, SubmitHandler } from 'react-hook-form';
@@ -10,8 +9,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useAuth } from '@/lib/context/auth-context';
-import Api from '@/lib/api/Api';
+import { useUpdatePassword } from '@/hooks/password/use-update-password';
 
 const schema = z
   .object({
@@ -26,42 +24,31 @@ const schema = z
 type Inputs = z.infer<typeof schema>;
 
 export function SetPasswordForm({ className, ...props }: React.ComponentProps<'div'>) {
-  const [isBusy, setIsBusy] = useState(false);
-  const { user } = useAuth();
   const router = useRouter();
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<Inputs>({ resolver: zodResolver(schema) });
 
-  const onSubmit: SubmitHandler<Inputs> = async (data) => {
-    if (!user) {
-      toast.error('User not authenticated');
-      router.push('/login');
-      return;
-    }
-
-    setIsBusy(true);
-    try {
-      await Api.user.updateUser(user.id, {
-        password: data.password,
-      });
+  const { updatePassword, isBusy } = useUpdatePassword({
+    onSuccess: () => {
       toast.success('Your password has been updated');
-      setIsBusy(false);
       router.push('/');
-    } catch (error: unknown) {
+    },
+    onError: (error) => {
       console.error('Password update failed:', error);
-      
-      // Extract error message if available
       let errorMessage = 'Failed to update password';
       if (error && typeof error === 'object' && 'message' in error) {
         errorMessage = String(error.message);
       }
-      
       toast.error(errorMessage);
-      setIsBusy(false);
-    }
+    },
+  });
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isValid },
+  } = useForm<Inputs>({ resolver: zodResolver(schema) });
+
+  const onSubmit: SubmitHandler<Inputs> = (data) => {
+    updatePassword({ password: data.password });
   };
 
   return (
@@ -87,7 +74,7 @@ export function SetPasswordForm({ className, ...props }: React.ComponentProps<'d
               )}
             </div>
             <div className="grid gap-2 mt-2">
-              <Button type="submit" className="w-full" disabled={isBusy}>
+              <Button type="submit" className="w-full" disabled={isBusy || !isValid}>
                 Update Password
               </Button>
             </div>

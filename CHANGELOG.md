@@ -190,3 +190,39 @@ For setup instructions, see:
 - `infrastructure/core-stack/README.md`
 - `apps/api/README.md`
 - `apps/admin/README.md`
+
+## [v0.1.0-alpha.6] - 2026-02-11
+### 🚀 Overview
+This alpha introduces the **Web Infrastructure Stack** using **AWS CDK** and the **Notification Microservice** — the first standalone microservice in the RawStack platform.
+
+The focus of this release is extending infrastructure automation for the public website deployment and establishing the foundation for event-driven microservices architecture.
+
+### ✨ Added
+- **Unified AWS CDK app** (`infrastructure/aws`) — consolidated infrastructure codebase for all stacks
+- **Web Stack** (`infrastructure/aws`) — AWS CDK infrastructure for Public Website
+    - ECS Fargate service behind an Application Load Balancer
+    - CloudFront distribution for CDN and HTTPS
+    - ECR integration for container images
+    - Automated deployment on ECR image push via Lambda + EventBridge
+- **Notification Microservice** (`services/notification`) — Event-driven notification service
+    - Email, push, and in-app notification support
+    - React email for email rendering
+
+### 🧱 Scope
+Included in this release:
+- `infrastructure/aws` — AWS CDK infrastructure (Core, Web, Admin) *(unified structure)*
+- `scripts/push-web-to-ecr.sh` — Web ECR push script *(new)*
+- `services/notification` — Notification Microservice *(new)*
+- `apps/api` — RawStack API Core
+- `apps/admin` — Admin Dashboard
+- `apps/app` — RawStack Mobile App
+- `apps/web` — Public Website
+
+### ⚙️ Notes
+This is an **infrastructure and services alpha**.
+The stacks are now managed under a single CDK app in `infrastructure/aws` with a shared `.env` file. The notification microservice introduces the first event-driven service, setting patterns for future microservices.
+
+For setup instructions, see:
+- `infrastructure/aws/README.md`
+- `services/notification/README.md`
+- `apps/api/README.md`

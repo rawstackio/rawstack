@@ -1,16 +1,15 @@
 'use client'
 
+import { z } from "zod";
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import Link from "next/link";
-import { useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
-import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import Api from "@/lib/api/Api";
+import { useCreatePasswordResetRequest } from "@/hooks/password/use-create-password-reset-request";
 
 const schema = z.object({
   email: z.string().email("Invalid email address").min(1, "Email is required"),
@@ -22,31 +21,19 @@ export function PasswordResetRequestForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
-  const [isBusy, setIsBusy] = useState(false);
+  const { createPasswordResetRequest, isBusy } = useCreatePasswordResetRequest({
+    onSuccess: (email: string) => toast.success(`A password reset link has been sent to ${email}`),
+    onError: () => toast.error('Something went wrong! Try again later!'),
+  });
+
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isValid },
   } = useForm<Inputs>({ resolver: zodResolver(schema) });
 
-  const onSubmit: SubmitHandler<Inputs> = async (data) => {
-    setIsBusy(true);
-
-    try {
-      const response = await Api.auth.createToken({
-        email: data.email.toLowerCase(),
-      });
-      const item = response.data.item;
-
-      if ('action' in item && item.action === 'CHECK_EMAIL') {
-        toast("A password reset link has been sent to your email address")
-      }
-
-      setIsBusy(false);
-    } catch (e) {
-      toast.error('Something went wrong! Try again later!');
-      setIsBusy(false);
-    }
+  const onSubmit: SubmitHandler<Inputs> = (data) => {
+    createPasswordResetRequest(data);
   }
 
   return (
@@ -57,7 +44,7 @@ export function PasswordResetRequestForm({
             <div className="grid gap-2">
               <Label htmlFor="email">Email</Label>
               <Input
-                  {...register("email", { required: true })}
+                  {...register("email")}
                 id="email"
                 type="email"
                 placeholder="hi@rawstack.io"
@@ -65,7 +52,7 @@ export function PasswordResetRequestForm({
               {errors.email && <span className="text-sm text-destructive">{errors.email.message}</span>}
             </div>
             <div className="grid gap-2 mt-2">
-              <Button type="submit" className="w-full" disabled={isBusy}>
+              <Button type="submit" className="w-full" disabled={isBusy || !isValid}>
                 Reset Password
               </Button>
             </div>

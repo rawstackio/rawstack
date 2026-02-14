@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
 import { z } from 'zod';
 import { useForm, SubmitHandler } from 'react-hook-form';
@@ -9,8 +8,8 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useAuth } from '@/lib/context/auth-context';
-import { AuthenticationError } from '@/lib/api/exception/errors';
+import { useLogin } from '@/hooks/auth/use-login';
+import { toast } from 'sonner';
 
 const schema = z.object({
   email: z.string().email('Invalid email address').min(1, 'Email is required'),
@@ -20,26 +19,21 @@ const schema = z.object({
 type Inputs = z.infer<typeof schema>;
 
 export function LoginForm({ className, ...props }: React.ComponentProps<'div'>) {
-  const [isBusy, setIsBusy] = useState(false);
-  const { login } = useAuth();
+  const { login, isBusy } = useLogin({
+    onError: (error) => {
+      console.log({ error });
+      toast.error('Login failed. Please check your credentials.');
+    },
+  });
+
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isValid },
   } = useForm<Inputs>({ resolver: zodResolver(schema) });
 
-  const onSubmit: SubmitHandler<Inputs> = async (data) => {
-    setIsBusy(true);
-    try {
-      await login(data);
-      setIsBusy(false);
-    } catch (error: unknown) {
-      if (error instanceof AuthenticationError) {
-        console.log({ error });
-        // setFormErrors([error.message]);
-      }
-      setIsBusy(false);
-    }
+  const onSubmit: SubmitHandler<Inputs> = (data) => {
+    login(data);
   };
 
   return (
@@ -58,7 +52,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'div'>) 
               {errors.password && <span className="text-sm text-destructive">{errors.password.message}</span>}
             </div>
             <div className="grid gap-2 mt-2">
-              <Button type="submit" className="w-full" disabled={isBusy}>
+              <Button type="submit" className="w-full" disabled={isBusy || !isValid}>
                 Login
               </Button>
             </div>

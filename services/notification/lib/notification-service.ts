@@ -24,7 +24,7 @@ export class NotificationService extends cdk.Stack {
 
     const userCreatedEventRule = new events.Rule(this, 'UserCreatedEventRule', {
       eventPattern: {
-        source: ['api'],
+        source: ['core-api'],
         detailType: ['user.user.wasCreated'],
       },
     });
@@ -32,7 +32,7 @@ export class NotificationService extends cdk.Stack {
 
     const passwordResetRequestEventRule = new events.Rule(this, 'PasswordResetRequestEventRule', {
       eventPattern: {
-        source: ['api'],
+        source: ['core-api'],
         detailType: ['auth.token.wasCreated'],
         detail: {
           data: { type: ['PASSWORD_RESET'] },
@@ -43,7 +43,7 @@ export class NotificationService extends cdk.Stack {
 
     const emailVerificationEventRule = new events.Rule(this, 'EmailVerificationEventRule', {
       eventPattern: {
-        source: ['api'],
+        source: ['core-api'],
         detailType: ['auth.token.wasCreated'],
         detail: {
           data: { type: ['EMAIL_VERIFICATION'] },

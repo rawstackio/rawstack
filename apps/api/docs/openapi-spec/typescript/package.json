@@ -1,6 +1,6 @@
 {
   "name": "@rawstack/api-client",
-  "version": "v0.1.0-alpha.5",
+  "version": "v0.1.0-alpha.6",
   "description": "openapi client for the rawstack api",
   "author": "rawstackio",
   "private": true,

@@ -13,6 +13,7 @@ import { CfnOutput, RemovalPolicy, Tags } from "aws-cdk-lib";
 import * as iam from "aws-cdk-lib/aws-iam";
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { Runtime } from 'aws-cdk-lib/aws-lambda';
+import * as path from 'path';
 
 /**
  * Configuration interface for CoreStack
@@ -118,11 +119,11 @@ export class CoreStack extends cdk.Stack {
    */
   private loadAndValidateConfig(): CoreStackConfig {
     const requiredEnvVars = [
-      'AWS_ECR_REPOSITORY_NAME',
-      'DB_NAME',
-      'DB_USER',
-      'ACCESS_TOKEN_TTL',
-      'JWT_SECRET'
+      'CORE_ECR_REPOSITORY_NAME',
+      'CORE_DB_NAME',
+      'CORE_DB_USER',
+      'CORE_ACCESS_TOKEN_TTL',
+      'CORE_JWT_SECRET'
     ];
 
     const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
@@ -135,22 +136,22 @@ export class CoreStack extends cdk.Stack {
     }
 
     const config: CoreStackConfig = {
-      ecrRepositoryName: process.env.AWS_ECR_REPOSITORY_NAME!,
-      databaseName: process.env.DB_NAME!,
-      databaseUser: process.env.DB_USER!,
-      databasePort: process.env.DB_PORT ? parseInt(process.env.DB_PORT) : CoreStack.DEFAULT_DATABASE_PORT,
-      jwtAccessTokenTtl: process.env.ACCESS_TOKEN_TTL!,
-      jwtSecret: process.env.JWT_SECRET!,
+      ecrRepositoryName: process.env.CORE_ECR_REPOSITORY_NAME!,
+      databaseName: process.env.CORE_DB_NAME!,
+      databaseUser: process.env.CORE_DB_USER!,
+      databasePort: process.env.CORE_DB_PORT ? parseInt(process.env.CORE_DB_PORT) : CoreStack.DEFAULT_DATABASE_PORT,
+      jwtAccessTokenTtl: process.env.CORE_ACCESS_TOKEN_TTL!,
+      jwtSecret: process.env.CORE_JWT_SECRET!,
       environment: process.env.ENVIRONMENT || CoreStack.DEFAULT_ENVIRONMENT,
-      desiredTaskCount: process.env.DESIRED_TASK_COUNT
-        ? parseInt(process.env.DESIRED_TASK_COUNT)
+      desiredTaskCount: process.env.CORE_DESIRED_TASK_COUNT
+        ? parseInt(process.env.CORE_DESIRED_TASK_COUNT)
         : CoreStack.DEFAULT_DESIRED_TASK_COUNT,
-      containerPort: process.env.CONTAINER_PORT
-        ? parseInt(process.env.CONTAINER_PORT)
+      containerPort: process.env.CORE_CONTAINER_PORT
+        ? parseInt(process.env.CORE_CONTAINER_PORT)
         : CoreStack.DEFAULT_CONTAINER_PORT,
-      maxAzs: process.env.MAX_AZS ? parseInt(process.env.MAX_AZS) : CoreStack.DEFAULT_MAX_AZS,
-      natGateways: process.env.NAT_GATEWAYS
-        ? parseInt(process.env.NAT_GATEWAYS)
+      maxAzs: process.env.CORE_MAX_AZS ? parseInt(process.env.CORE_MAX_AZS) : CoreStack.DEFAULT_MAX_AZS,
+      natGateways: process.env.CORE_NAT_GATEWAYS
+        ? parseInt(process.env.CORE_NAT_GATEWAYS)
         : CoreStack.DEFAULT_NAT_GATEWAYS,
       enableDeletionProtection: process.env.ENABLE_DELETION_PROTECTION === 'true'
     };
@@ -510,7 +511,7 @@ export class CoreStack extends cdk.Stack {
     // Create Lambda function for deployment
     const deploymentLambda = new NodejsFunction(this, 'CoreApiDeploymentLambda', {
       runtime: Runtime.NODEJS_20_X,
-      entry: 'lambda/deployment-trigger.ts',
+      entry: path.join(__dirname, '../lambda/core-stack/deployment-trigger.ts'),
       handler: 'handler',
       role: lambdaRole,
       description: 'Triggers ECS service update on ECR image push',
@@ -600,6 +601,38 @@ export class CoreStack extends cdk.Stack {
       value: this.vpc.vpcId,
       description: 'VPC ID',
       exportName: `${this.stackName}-VpcId`,
+    });
+
+    // Export AZs and subnet IDs for cross-stack imports (e.g., web-stack/admin-stack).
+    // We export as a comma-separated string for easy consumption via Fn.importValue.
+    new CfnOutput(this, 'VpcAvailabilityZones', {
+      value: cdk.Fn.join(',', this.vpc.availabilityZones),
+      description: 'Comma-separated list of VPC availability zones',
+      exportName: `${this.stackName}-VpcAvailabilityZones`,
+    });
+
+    new CfnOutput(this, 'PublicSubnet1Id', {
+      value: this.vpc.publicSubnets[0].subnetId,
+      description: 'ID of public subnet 1',
+      exportName: `${this.stackName}-PublicSubnet1Id`,
+    });
+
+    new CfnOutput(this, 'PublicSubnet2Id', {
+      value: this.vpc.publicSubnets[1].subnetId,
+      description: 'ID of public subnet 2',
+      exportName: `${this.stackName}-PublicSubnet2Id`,
+    });
+
+    new CfnOutput(this, 'PrivateSubnet1Id', {
+      value: this.vpc.privateSubnets[0].subnetId,
+      description: 'ID of private subnet 1',
+      exportName: `${this.stackName}-PrivateSubnet1Id`,
+    });
+
+    new CfnOutput(this, 'PrivateSubnet2Id', {
+      value: this.vpc.privateSubnets[1].subnetId,
+      description: 'ID of private subnet 2',
+      exportName: `${this.stackName}-PrivateSubnet2Id`,
     });
 
     new CfnOutput(this, 'EcsClusterName', {
