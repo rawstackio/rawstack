@@ -5,10 +5,10 @@ export default class UserModel {
     public readonly id: string,
     public readonly email: string,
     public readonly roles: string[] = [],
-    public readonly unverifiedEmail: boolean,
+    public readonly unverifiedEmail: string | undefined,
   ) {}
 
   static createFromApiUser(user: User): UserModel {
-    return new UserModel(user.id, user.email, user.roles, !!user.unverifiedEmail);
+    return new UserModel(user.id, user.email, user.roles, user.unverifiedEmail);
   }
 }

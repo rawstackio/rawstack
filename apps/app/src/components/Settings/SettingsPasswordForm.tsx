@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
+import React from 'react';
 import styled from 'styled-components/native';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { Dimensions } from 'react-native';
 import Input from '../Input/Input';
 import { theme } from '../../lib/theme';
 import Button from '../Button/Button';
-import Api from '../../lib/api/Api.ts';
 import { useAuth } from '../../lib/context/AuthContext.tsx';
+import { useUpdateUserPassword } from '../../hooks/user/use-update-user-password.ts';
 
 const width = Dimensions.get('window').width;
 
@@ -21,35 +21,28 @@ interface Props {
 
 const SettingsPasswordForm = ({ onUpdated }: Props) => {
   const { user } = useAuth();
-  const [isUpdating, setIsUpdating] = useState(false);
   const {
     control,
     getValues,
     handleSubmit,
-    // setError,
     formState: { errors },
   } = useForm<Inputs>();
 
-  const onSubmit: SubmitHandler<Inputs> = async data => {
-    setIsUpdating(true);
+  const { updateUserPassword, isBusy } = useUpdateUserPassword({
+    onSuccess: () => {
+      onUpdated();
+    },
+  });
 
+  const onSubmit: SubmitHandler<Inputs> = async data => {
     if (!user) {
-      setIsUpdating(false);
       return;
     }
 
-    try {
-      await Api.user.usersIdPatch(user.id, {
-        password: data.password,
-      });
-
-      setIsUpdating(false);
-      onUpdated();
-    } catch (e) {
-      // @todo: handle other errors
-    }
-
-    setIsUpdating(false);
+    updateUserPassword({
+      userId: user.id,
+      password: data.password,
+    });
   };
 
   return (
@@ -82,8 +75,7 @@ const SettingsPasswordForm = ({ onUpdated }: Props) => {
             control={control}
             name="confirmPassword"
             rules={{
-              validate: value =>
-                value === getValues('password') || 'Passwords do not match',
+              validate: value => value === getValues('password') || 'Passwords do not match',
             }}
             render={({ field: { onChange, value, onBlur } }) => (
               <Input
@@ -99,11 +91,7 @@ const SettingsPasswordForm = ({ onUpdated }: Props) => {
         </InputWrapper>
       </Content>
       <Footer>
-        <ModalButton
-          onPress={handleSubmit(onSubmit)}
-          label={'Update'}
-          isBusy={isUpdating}
-        />
+        <ModalButton onPress={handleSubmit(onSubmit)} label={'Update'} isBusy={isBusy} />
       </Footer>
     </Container>
   );

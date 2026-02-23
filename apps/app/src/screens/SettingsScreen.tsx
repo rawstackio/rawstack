@@ -22,17 +22,23 @@ import ChevronDown from '../components/Icon/Items/ChevronDown';
 import Picker, { PickerItem } from '../components/Picker/Picker';
 import Logout from '../components/Icon/Items/Logout';
 import ThemeAwareText from '../components/Text/Text';
-import Api from '../lib/api/Api.ts';
+import { useUpdateUserEmail } from '../hooks/user/use-update-user-email.ts';
 
 const SettingsScreen = () => {
   const { user, logout, refreshUser } = useAuth();
-  const { theme, setTheme } = useApp();
+  const { theme: selectedTheme, setTheme } = useApp();
   const [showThemeSelector, setShowThemeSelector] = useState(false);
   const [edit, setEdit] = useState<undefined | 'email' | 'password'>(undefined);
   const navigation = useNavigation();
   const phoneTheme = useColorScheme();
 
   const { setModalConfig, closeModal, setActionButtonBusy } = useApp();
+
+  const { updateUserEmail, isBusy } = useUpdateUserEmail({
+    onSuccess: () => {
+      initialEmailVerificationScreen();
+    },
+  });
 
   // Here’s our resend handler,
   // defined in the main component scope rather than inline
@@ -41,13 +47,9 @@ const SettingsScreen = () => {
       return;
     }
 
-    setActionButtonBusy(true);
+    setActionButtonBusy(isBusy);
 
-    await Api.user.usersIdPatch(user.id, {
-      email: user.unverifiedEmail,
-    });
-
-    initialEmailVerificationScreen();
+    updateUserEmail({ userId: user.id, email: user.unverifiedEmail! });
   };
 
   const onUserNotificationPress = () => {
@@ -64,7 +66,7 @@ const SettingsScreen = () => {
 
   const initialEmailVerificationScreen = () => {
     setModalConfig({
-      title: 'Unverified Sent',
+      title: 'Email verification token sent',
       content: 'Please check your email for the verification link',
       confirmButton: {
         label: 'Ok',
@@ -128,7 +130,7 @@ const SettingsScreen = () => {
             <UnverifiedWrapper onPress={onUserNotificationPress}>
               <ThemeAwareText>{`Your email "${user?.unverifiedEmail}" is unverified!`}</ThemeAwareText>
               {!user.isVerified && (
-                <ThemeAwareText>Many features will be restricted until you are verified</ThemeAwareText>
+                <ThemeAwareText>Some features may be restricted until you are verified</ThemeAwareText>
               )}
             </UnverifiedWrapper>
           )}
@@ -150,7 +152,7 @@ const SettingsScreen = () => {
             icon={phoneTheme === 'dark' ? Moon : Sun}
           >
             <SettingsRowRight>
-              <ThemeAwareText>{theme}</ThemeAwareText>
+              <ThemeAwareText>{selectedTheme}</ThemeAwareText>
               <Arrow width={20} icon={ChevronDown} />
               {showThemeSelector && <Picker items={getColorOptions()} style={{ top: -48, zIndex: 20 }} />}
             </SettingsRowRight>

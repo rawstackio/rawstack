@@ -43,7 +43,7 @@ const webStack = new WebStack(app, "web", {
 });
 
 // Admin stack - provides admin dashboard hosting
-const adminStack = new AdminStack(app, "admin-hosting", {
+const adminStack = new AdminStack(app, "admin", {
   env,
   description: "Admin dashboard static hosting with S3 and CloudFront",
 });

@@ -5,43 +5,42 @@ import Input from '../Input/Input';
 import { theme } from '../../lib/theme';
 import Button from '../Button/Button';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
-import Api from '../../lib/api/Api';
+import { useCreatePasswordResetRequest } from '../../hooks/password/use-create-password-reset-request';
 
 type Inputs = {
   email: string;
 };
 
 interface Props {
-  isBusy?: boolean;
+  onSuccess?: (email: string) => void;
+  onError?: (error: unknown) => void;
   formErrors?: string[];
 }
 
-const PasswordResetRequestForm = ({ isBusy, formErrors }: Props) => {
+const PasswordResetRequestForm = ({ formErrors, onSuccess, onError }: Props) => {
   const {
     control,
     handleSubmit,
+    reset,
     formState: { errors },
   } = useForm<Inputs>();
 
-  const onSubmit: SubmitHandler<Inputs> = async data => {
-    try {
-      const response = await Api.auth.createToken({
-        email: data.email.toLowerCase(),
+  const { createPasswordResetRequest, isBusy } = useCreatePasswordResetRequest({
+    onSuccess: (email: string) => {
+      Toast.show({
+        type: 'success',
+        text1: 'A password reset link has been sent to your email address',
       });
-      const item = response.data.item;
+      reset();
+      onSuccess?.(email);
+    },
+    onError,
+  });
 
-      if ('action' in item && item.action === 'CHECK_EMAIL') {
-        Toast.show({
-          type: 'success',
-          text1: 'A password reset link has been sent to your email address',
-          text2: 'A password reset link has been sent to your email address',
-        });
-
-        // clear the form
-      }
-    } catch (e) {
-      // @todo:oops model
-    }
+  const onSubmit: SubmitHandler<Inputs> = data => {
+    createPasswordResetRequest({
+      email: data.email.toLowerCase(),
+    });
   };
 
   return (

@@ -2,22 +2,21 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import Api from '@/lib/api/api.ts';
 import UserModel from '@/lib/model/user-model.ts';
 import { UpdateUserRequestRolesEnum } from '@rawstack/api-client';
+import { UseMutationWithCallbacksOptions } from '@/hooks/use-mutation-with-callbacks.ts';
 
 interface UpdateUserParams {
-  email: string;
-  isAdmin?: boolean;
+  user: UserModel;
+  data: {
+    email: string;
+    isAdmin?: boolean;
+  };
 }
 
-interface UseUpdateUserOptions {
-  onSuccess?: () => void;
-  onError?: (error: unknown) => void;
-}
-
-export function useUpdateUser(options?: UseUpdateUserOptions) {
+export function useUpdateUser(options?: UseMutationWithCallbacksOptions<UpdateUserParams>) {
   const queryClient = useQueryClient();
 
   const { mutate, data, isPending } = useMutation({
-    mutationFn: async (data: { user: UserModel; data: UpdateUserParams }) => {
+    mutationFn: async (data: UpdateUserParams) => {
       let existingRoles = data.user.roles;
 
       if (data.user.isAdmin !== data.data.isAdmin) {
@@ -35,10 +34,10 @@ export function useUpdateUser(options?: UseUpdateUserOptions) {
 
       return UserModel.createFromApiUser(response.data.item);
     },
-    onSuccess: (data) => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
       queryClient.invalidateQueries({ queryKey: ['user', data.id] });
-      options?.onSuccess?.();
+      options?.onSuccess?.(variables);
     },
     onError: (error) => {
       options?.onError?.(error);

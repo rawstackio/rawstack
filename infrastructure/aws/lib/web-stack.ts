@@ -12,8 +12,12 @@ import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { Runtime } from 'aws-cdk-lib/aws-lambda';
 import * as cloudfront from "aws-cdk-lib/aws-cloudfront";
 import * as origins from "aws-cdk-lib/aws-cloudfront-origins";
+import * as acm from 'aws-cdk-lib/aws-certificatemanager';
+import * as route53 from 'aws-cdk-lib/aws-route53';
+import * as r53Targets from 'aws-cdk-lib/aws-route53-targets';
 import * as logs from "aws-cdk-lib/aws-logs";
 import * as path from 'path';
+import { DomainConfig, getHostedZone, isDomainConfigEnabled, toWwwDomain } from './domain';
 
 /**
  * Configuration interface for WebStack
@@ -29,11 +33,20 @@ interface WebStackConfig {
   readonly containerPort?: number;
   readonly enableDeletionProtection?: boolean;
   readonly cloudFrontPriceClass?: cloudfront.PriceClass;
+
+  /** Optional custom domain configuration. */
+  readonly domain?: DomainConfig;
 }
 
 
 export interface WebStackProps extends cdk.StackProps {
   vpc: ec2.IVpc;
+  /**
+   * Optional certificate ARN for CloudFront (must be in us-east-1).
+   * If domain is enabled and this is not provided, a certificate will be created
+   * in us-east-1 using DnsValidatedCertificate.
+   */
+  certificateArn?: string;
 }
 
 /**
@@ -66,6 +79,9 @@ export class WebStack extends cdk.Stack {
   public readonly cluster: ecs.Cluster;
   public readonly fargateService: ecsPatterns.ApplicationLoadBalancedFargateService;
   public readonly distribution: cloudfront.Distribution;
+
+  /** The configured custom domain name (if enabled). */
+  public customDomainName?: string;
 
   constructor(scope: Construct, id: string, props: WebStackProps) {
     super(scope, id, props);
@@ -126,9 +142,30 @@ export class WebStack extends cdk.Stack {
         : WebStack.DEFAULT_CONTAINER_PORT,
       enableDeletionProtection: process.env.ENABLE_DELETION_PROTECTION === 'true',
       cloudFrontPriceClass: this.parseCloudFrontPriceClass(process.env.WEB_CLOUDFRONT_PRICE_CLASS),
+      domain: this.loadDomainConfigFromEnv(),
     };
 
     return config;
+  }
+
+  private loadDomainConfigFromEnv(): DomainConfig | undefined {
+    const enabled = process.env.WEB_DOMAIN_ENABLED === 'true';
+    if (!enabled) return undefined;
+
+    const hostedZoneName = process.env.DOMAIN_HOSTED_ZONE_NAME;
+    const hostedZoneId = process.env.DOMAIN_HOSTED_ZONE_ID;
+    const domainName = process.env.WEB_DOMAIN_NAME;
+
+    if (!hostedZoneName || !domainName) {
+      throw new Error('WEB_DOMAIN_ENABLED is true but DOMAIN_HOSTED_ZONE_NAME and/or WEB_DOMAIN_NAME are not set.');
+    }
+
+    return {
+      hostedZoneName,
+      hostedZoneId,
+      domainName,
+      addWww: process.env.WEB_DOMAIN_ADD_WWW === 'true',
+    };
   }
 
   /**
@@ -302,7 +339,42 @@ export class WebStack extends cdk.Stack {
       httpPort: 80,
     });
 
-    // Create CloudFront distribution
+    const { aliases, certificate } = this.maybeCreateDomainForCloudFront(config.domain);
+
+    // Create a custom cache policy for Next.js that includes RSC headers in the cache key.
+    // This ensures CloudFront caches HTML and RSC responses separately.
+    const nextJsCachePolicy = new cloudfront.CachePolicy(this, 'NextJsCachePolicy', {
+      cachePolicyName: `${this.stackName}-NextJsCachePolicy`,
+      comment: 'Cache policy for Next.js with RSC header support',
+      defaultTtl: cdk.Duration.seconds(0),
+      minTtl: cdk.Duration.seconds(0),
+      maxTtl: cdk.Duration.days(365),
+      cookieBehavior: cloudfront.CacheCookieBehavior.none(),
+      headerBehavior: cloudfront.CacheHeaderBehavior.allowList(
+        'RSC',
+        'Next-Router-Prefetch',
+        'Next-Router-State-Tree',
+        'Next-Url',
+      ),
+      queryStringBehavior: cloudfront.CacheQueryStringBehavior.all(),
+      enableAcceptEncodingGzip: true,
+      enableAcceptEncodingBrotli: true,
+    });
+
+    // Cache policy for static assets (/_next/static/*) - these are immutable
+    const staticAssetsCachePolicy = new cloudfront.CachePolicy(this, 'StaticAssetsCachePolicy', {
+      cachePolicyName: `${this.stackName}-StaticAssetsCachePolicy`,
+      comment: 'Cache policy for Next.js static assets',
+      defaultTtl: cdk.Duration.days(365),
+      minTtl: cdk.Duration.days(365),
+      maxTtl: cdk.Duration.days(365),
+      cookieBehavior: cloudfront.CacheCookieBehavior.none(),
+      headerBehavior: cloudfront.CacheHeaderBehavior.none(),
+      queryStringBehavior: cloudfront.CacheQueryStringBehavior.none(),
+      enableAcceptEncodingGzip: true,
+      enableAcceptEncodingBrotli: true,
+    });
+
     const distribution = new cloudfront.Distribution(this, 'WebDistribution', {
       defaultBehavior: {
         origin: albOrigin,
@@ -310,15 +382,77 @@ export class WebStack extends cdk.Stack {
         allowedMethods: cloudfront.AllowedMethods.ALLOW_ALL,
         cachedMethods: cloudfront.CachedMethods.CACHE_GET_HEAD_OPTIONS,
         compress: true,
-        cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED,
+        cachePolicy: nextJsCachePolicy,
         originRequestPolicy: cloudfront.OriginRequestPolicy.ALL_VIEWER,
+      },
+      additionalBehaviors: {
+        // Static assets are immutable and can be cached aggressively
+        '/_next/static/*': {
+          origin: albOrigin,
+          viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+          allowedMethods: cloudfront.AllowedMethods.ALLOW_GET_HEAD_OPTIONS,
+          cachedMethods: cloudfront.CachedMethods.CACHE_GET_HEAD_OPTIONS,
+          compress: true,
+          cachePolicy: staticAssetsCachePolicy,
+        },
       },
       priceClass: config.cloudFrontPriceClass || WebStack.DEFAULT_CLOUDFRONT_PRICE_CLASS,
       enabled: true,
       comment: `${this.stackName} Web Application Distribution`,
+      domainNames: aliases,
+      certificate,
     });
 
+    if (isDomainConfigEnabled(config.domain)) {
+      this.createRoute53RecordsForCloudFront(config.domain, distribution);
+    }
+
     return distribution;
+  }
+
+  private maybeCreateDomainForCloudFront(domain?: DomainConfig): {
+    aliases?: string[];
+    certificate?: acm.ICertificate;
+  } {
+    if (!isDomainConfigEnabled(domain)) return {};
+
+    // CloudFront certificates must be in us-east-1.
+    const hostedZone = getHostedZone(this, domain, 'WebHostedZoneCert');
+
+    // Use DnsValidatedCertificate to create the certificate in us-east-1 for CloudFront
+    // Note: DnsValidatedCertificate is deprecated but still the most reliable way
+    // to create cross-region certificates in CDK without additional stacks.
+    const cert = new acm.DnsValidatedCertificate(this, 'WebDomainCertificate', {
+      domainName: domain.domainName,
+      hostedZone,
+      region: 'us-east-1', // CloudFront requires certificates in us-east-1
+      subjectAlternativeNames: domain.addWww ? [toWwwDomain(domain.domainName)] : undefined,
+    });
+
+    const aliases = [domain.domainName];
+    if (domain.addWww) aliases.push(toWwwDomain(domain.domainName));
+
+    this.customDomainName = domain.domainName;
+
+    return { aliases, certificate: cert };
+  }
+
+  private createRoute53RecordsForCloudFront(domain: DomainConfig, distribution: cloudfront.Distribution): void {
+    const zone = getHostedZone(this, domain, 'WebHostedZoneRecords');
+
+    new route53.ARecord(this, 'WebAliasRecord', {
+      zone,
+      recordName: domain.domainName,
+      target: route53.RecordTarget.fromAlias(new r53Targets.CloudFrontTarget(distribution)),
+    });
+
+    if (domain.addWww) {
+      new route53.ARecord(this, 'WebAliasRecordWww', {
+        zone,
+        recordName: toWwwDomain(domain.domainName),
+        target: route53.RecordTarget.fromAlias(new r53Targets.CloudFrontTarget(distribution)),
+      });
+    }
   }
 
   /**
@@ -462,5 +596,19 @@ export class WebStack extends cdk.Stack {
       description: 'ECS Cluster name',
       exportName: `${this.stackName}-EcsClusterName`,
     });
+
+    if (this.customDomainName) {
+      new CfnOutput(this, 'CustomDomainName', {
+        value: this.customDomainName,
+        description: 'Custom domain name (if configured)',
+        exportName: `${this.stackName}-CustomDomainName`,
+      });
+
+      new CfnOutput(this, 'CustomDomainUrl', {
+        value: `https://${this.customDomainName}`,
+        description: 'Custom domain URL (HTTPS)',
+        exportName: `${this.stackName}-CustomDomainUrl`,
+      });
+    }
   }
 }

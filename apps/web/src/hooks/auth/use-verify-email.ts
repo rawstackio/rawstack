@@ -1,29 +1,15 @@
-import { useMutation } from '@tanstack/react-query';
 import Api from '@/lib/api/Api';
+import { useMutationWithCallbacks, type UseMutationWithCallbacksOptions } from '@/hooks/use-mutation-with-callbacks';
 
 interface VerifyEmailParams {
   token: string;
 }
 
-interface UseVerifyEmailOptions {
-  onSuccess?: () => void;
-  onError?: (error: unknown) => void;
-}
-
-export function useVerifyEmail(options?: UseVerifyEmailOptions) {
-  const { mutate, isPending, isSuccess, isError } = useMutation({
-    mutationFn: (data: VerifyEmailParams) => {
-      return Api.auth.createActionRequest({
-        token: data.token,
-      });
-    },
-    onSuccess: () => {
-      options?.onSuccess?.();
-    },
-    onError: (error) => {
-      options?.onError?.(error);
-    },
-  });
+export function useVerifyEmail(options?: UseMutationWithCallbacksOptions<VerifyEmailParams>) {
+  const { mutate, isPending, isSuccess, isError } = useMutationWithCallbacks(
+    (data: VerifyEmailParams) => Api.auth.createActionRequest({ token: data.token }),
+    options,
+  );
 
   return { verifyEmail: mutate, isBusy: isPending, isSuccess, isError };
 }

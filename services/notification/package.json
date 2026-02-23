@@ -1,6 +1,6 @@
 {
   "name": "rawstack-notification-service",
-  "version": "v0.1.0-alpha.6",
+  "version": "v0.1.0-alpha.7",
   "bin": {
     "app-runner": "aws/bin/notification.js"
   },

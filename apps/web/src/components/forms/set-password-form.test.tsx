@@ -35,7 +35,7 @@ describe('SetPasswordForm', () => {
       prefetch: vi.fn(),
     } as ReturnType<typeof useRouter>)
     vi.mocked(useAuth).mockReturnValue({
-      user: { id: 'user-123', email: 'test@example.com', roles: [], unverifiedEmail: false },
+      user: { id: 'user-123', email: 'test@example.com', roles: [], unverifiedEmail: undefined },
       login: vi.fn(),
       logout: vi.fn(),
       authModalIsOpen: false,

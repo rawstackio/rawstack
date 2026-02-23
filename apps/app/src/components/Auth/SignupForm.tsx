@@ -1,13 +1,11 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import styled from 'styled-components/native';
 import Input from '../Input/Input';
 import { theme } from '../../lib/theme';
 import Button from '../Button/Button';
-import UserModel from '../../lib/model/UserModel';
-import { UserCredentials } from '../../lib/context/AuthContext';
 import { validation } from '../../lib/config/forms';
-import Api from '../../lib/api/Api';
+import { useRegister } from '../../hooks/auth/use-register';
 import { ApiError } from '../../lib/api/exception/errors.ts';
 
 type Inputs = {
@@ -17,14 +15,12 @@ type Inputs = {
 };
 
 interface Props {
-  onUserCreated: (user: UserModel, credentials: UserCredentials) => void;
-  isBusy?: boolean;
+  onSuccess?: () => void;
+  onError?: (error: unknown) => void;
   formErrors?: string[];
 }
 
-const SignupForm = ({ formErrors, isBusy, onUserCreated }: Props) => {
-  const [isCreatingUser, setIsCreatingUser] = useState(false);
-
+const SignupForm = ({ formErrors, onSuccess, onError }: Props) => {
   const {
     control,
     getValues,
@@ -33,31 +29,25 @@ const SignupForm = ({ formErrors, isBusy, onUserCreated }: Props) => {
     formState: { errors },
   } = useForm<Inputs>();
 
-  const onSubmit: SubmitHandler<Inputs> = async data => {
-    setIsCreatingUser(true);
-
-    try {
-      const response = await Api.user.createUser({
-        email: data.email.toLowerCase(),
-        password: data.password,
-      });
-
-      onUserCreated(UserModel.createFromApiUser(response.data.item), {
-        email: data.email.toLowerCase(),
-        password: data.password,
-      });
-    } catch (e: unknown) {
-      console.log({ e });
-      if (e instanceof ApiError && e.statusCode === 409) {
+  const { register, isBusy } = useRegister({
+    onSuccess,
+    onError: (error: unknown) => {
+      if (error instanceof ApiError && error.statusCode === 409) {
         setError('email', {
           type: 'custom',
           message: 'A user with this email already exists',
         });
       } else {
-        // @todo...
+        onError?.(error);
       }
-    }
-    setIsCreatingUser(false);
+    },
+  });
+
+  const onSubmit: SubmitHandler<Inputs> = data => {
+    register({
+      email: data.email.toLowerCase(),
+      password: data.password,
+    });
   };
 
   return (
@@ -118,12 +108,7 @@ const SignupForm = ({ formErrors, isBusy, onUserCreated }: Props) => {
         </InputWrapper>
       </Content>
       <Footer>
-        <Button
-          secondary={true}
-          onPress={handleSubmit(onSubmit)}
-          label={'Create Account'}
-          isBusy={isBusy || isCreatingUser}
-        />
+        <Button secondary={true} onPress={handleSubmit(onSubmit)} label={'Create Account'} isBusy={isBusy} />
       </Footer>
     </Container>
   );

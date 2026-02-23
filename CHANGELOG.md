@@ -226,3 +226,57 @@ For setup instructions, see:
 - `infrastructure/aws/README.md`
 - `services/notification/README.md`
 - `apps/api/README.md`
+
+## [v0.1.0-alpha.7] - 2026-02-26
+### 🚀 Overview
+This alpha focuses on **code quality improvements** and **developer experience enhancements** across the Admin Dashboard and Mobile App, along with backend bug fixes and Docker setup improvements.
+
+The focus of this release is reducing boilerplate, standardizing mutation patterns, improving authentication flows, and enhancing local development tooling.
+
+### ✨ Added
+- **Reusable mutation hook** (`useMutationWithCallbacks`) in the Admin Dashboard
+    - Standardizes mutation handling across the application
+    - Reduces boilerplate for success/error callbacks
+- **React Query integration** in the Mobile App
+    - Added `@tanstack/react-query` dependency
+    - Wrapped app with `QueryProvider` to enable query/mutation support
+
+### ♻️ Refactored
+- **Admin Dashboard** mutation hooks
+    - Refactored password, user creation, user update, and user deletion hooks to use `useMutationWithCallbacks`
+    - Simplified APIs and callback handling across all mutation hooks
+- **Mobile App** authentication forms
+    - Updated `LoginForm`, `SignupForm`, and `PasswordResetRequestForm` to use new hooks (`useLogin`, `useRegister`, `useCreatePasswordResetRequest`)
+    - Simplified form props and error handling
+    - Removed legacy callback and state logic in favor of hook-driven approaches
+- **Infrastructure organization**
+    - Consolidated AWS CDK stacks into unified `infrastructure/aws` directory
+    - Updated documentation and deployment commands
+
+### 🐛 Fixed
+- **API Core** bug fixes
+    - Fixed token lookup to ignore deleted users in `TokenRepositoryPrisma`
+    - Improved email update logic in `UpdateUserService` to handle cases where the unverified email matches the requested email
+
+### 🛠️ Improved
+- **Docker Compose** setup for the API
+    - Added persistent volumes for local development
+    - Added health checks for improved container reliability
+    - Updated test database configuration
+
+### 🧱 Scope
+Included in this release:
+- `apps/admin` — Admin Dashboard (mutation hook refactoring)
+- `apps/app` — RawStack Mobile App (auth forms + React Query)
+- `apps/api` — RawStack API Core (bug fixes)
+- `infrastructure/aws` — AWS CDK infrastructure (documentation updates)
+
+### ⚙️ Notes
+This is a **maintenance and DX-focused alpha**.
+The new `useMutationWithCallbacks` hook establishes a consistent pattern for handling mutations that can be adopted across the platform. The React Query integration in the mobile app aligns it with the admin dashboard patterns.
+
+For setup instructions, see:
+- `apps/admin/README.md`
+- `apps/app/README.md`
+- `apps/api/README.md`
+

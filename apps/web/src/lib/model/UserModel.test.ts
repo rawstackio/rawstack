@@ -5,22 +5,22 @@ import { User } from '@rawstack/api-client';
 describe('UserModel', () => {
   describe('constructor', () => {
     it('should create a UserModel instance with all properties', () => {
-      const user = new UserModel('user-123', 'test@example.com', ['ADMIN', 'VERIFIED_USER'], true);
+      const user = new UserModel('user-123', 'test@example.com', ['ADMIN', 'VERIFIED_USER'], 'pending@example.com');
 
       expect(user.id).toBe('user-123');
       expect(user.email).toBe('test@example.com');
       expect(user.roles).toEqual(['ADMIN', 'VERIFIED_USER']);
-      expect(user.unverifiedEmail).toBe(true);
+      expect(user.unverifiedEmail).toBe('pending@example.com');
     });
 
     it('should work without unverifiedEmail', () => {
-      const user = new UserModel('user-123', 'test@example.com', [], false);
+      const user = new UserModel('user-123', 'test@example.com', [], undefined);
 
-      expect(user.unverifiedEmail).toBe(false);
+      expect(user.unverifiedEmail).toBeUndefined();
     });
 
     it('should work with empty roles', () => {
-      const user = new UserModel('user-123', 'test@example.com', [], false);
+      const user = new UserModel('user-123', 'test@example.com', [], undefined);
 
       expect(user.roles).toEqual([]);
     });
@@ -40,7 +40,7 @@ describe('UserModel', () => {
       expect(user.id).toBe('user-456');
       expect(user.email).toBe('api@example.com');
       expect(user.roles).toEqual(['ADMIN', 'VERIFIED_USER']);
-      expect(user.unverifiedEmail).toBe(true);
+      expect(user.unverifiedEmail).toBe('pending@example.com');
     });
 
     it('should handle API User without unverifiedEmail', () => {
@@ -54,7 +54,7 @@ describe('UserModel', () => {
 
       expect(user.id).toBe('user-456');
       expect(user.email).toBe('api@example.com');
-      expect(user.unverifiedEmail).toBe(false);
+      expect(user.unverifiedEmail).toBeUndefined();
     });
 
     it('should handle empty roles array', () => {

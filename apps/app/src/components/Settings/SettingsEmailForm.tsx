@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import styled from 'styled-components/native';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { Dimensions } from 'react-native';
@@ -7,7 +7,7 @@ import { theme } from '../../lib/theme';
 import Button from '../Button/Button';
 import { validation } from '../../lib/config/forms';
 import { useAuth } from '../../lib/context/AuthContext';
-import Api from '../../lib/api/Api';
+import { useUpdateUserEmail } from '../../hooks/user/use-update-user-email';
 import { ApiError } from '../../lib/api/exception/errors';
 
 const width = Dimensions.get('window').width;
@@ -23,7 +23,6 @@ interface Props {
 
 const SettingsEmailForm = ({ onUpdated }: Props) => {
   const { user } = useAuth();
-  const [isUpdating, setIsUpdating] = useState(false);
   const {
     control,
     getValues,
@@ -32,32 +31,29 @@ const SettingsEmailForm = ({ onUpdated }: Props) => {
     formState: { errors },
   } = useForm<Inputs>();
 
-  const onSubmit: SubmitHandler<Inputs> = async data => {
-    setIsUpdating(true);
-
-    if (!user) {
-      setIsUpdating(false);
-      return;
-    }
-
-    try {
-      await Api.user.usersIdPatch(user.id, {
-        email: data.email.toLowerCase(),
-      });
-
-      setIsUpdating(false);
+  const { updateUserEmail, isBusy } = useUpdateUserEmail({
+    onSuccess: () => {
       onUpdated();
-    } catch (e) {
-      if (e instanceof ApiError && e.statusCode === 409) {
+    },
+    onError: error => {
+      if (error instanceof ApiError && error.statusCode === 409) {
         setError('email', {
           type: 'custom',
           message: 'A user with this email already exists',
         });
       }
-      throw e;
+    },
+  });
+
+  const onSubmit: SubmitHandler<Inputs> = async data => {
+    if (!user) {
+      return;
     }
 
-    setIsUpdating(false);
+    updateUserEmail({
+      userId: user.id,
+      email: data.email.toLowerCase(),
+    });
   };
 
   return (
@@ -99,7 +95,7 @@ const SettingsEmailForm = ({ onUpdated }: Props) => {
         </InputWrapper>
       </Content>
       <Footer>
-        <ModalButton onPress={handleSubmit(onSubmit)} label={'Update'} isBusy={isUpdating} />
+        <ModalButton onPress={handleSubmit(onSubmit)} label={'Update'} isBusy={isBusy} />
       </Footer>
     </Container>
   );

@@ -131,7 +131,7 @@ export function AccountForm({ userId }: Props) {
         >
           Email
         </label>
-        <Input {...register('email')} placeholder="your email" />
+        <Input {...register('email')} placeholder="email" />
         {errors.email && <Error message={errors.email.message} />}
       </div>
 
