@@ -15,13 +15,15 @@ apps/
 ├── admin/        # React + Vite admin dashboard
 └── app/          # React Native mobile app
 infrastructure/
-├── core-stack/   # AWS CDK for API (ECS, RDS, ElastiCache)
-└── admin-stack/  # AWS CDK for admin (S3 + CloudFront)
+└── aws/          # Unified AWS CDK (core, admin, web, domain stacks)
 packages/
 └── api-client/   # Auto-generated TypeScript API client (shared)
+services/
+└── notification/ # Notification microservice
 scripts/
 ├── generate-api-client.sh  # OpenAPI spec → TypeScript client
-└── push-api-to-ecr.sh      # Build and push Docker image to ECR
+├── push-api-to-ecr.sh      # Build and push API Docker image to ECR
+└── push-web-to-ecr.sh      # Build and push web Docker image to ECR
 ```
 
 ## Common Commands
@@ -63,8 +65,7 @@ npm run test:run            # Single run
 
 ### Infrastructure
 ```bash
-cd infrastructure/core-stack && npx cdk deploy   # Deploy API infrastructure
-cd infrastructure/admin-stack && npx cdk deploy  # Deploy admin hosting
+cd infrastructure/aws && npx cdk deploy          # Deploy all stacks
 ```
 
 ## Architecture
@@ -102,5 +103,5 @@ Redis via ioredis. Local development uses docker-compose; production uses AWS El
 - `apps/api/prisma/schema.prisma` - Database schema
 - `apps/api/docker-compose.yml` - Local PostgreSQL + Redis
 - `apps/api/.env.dist` - API environment template
-- `infrastructure/core-stack/.env.dist` - AWS deployment config
+- `infrastructure/aws/.env.dist` - AWS deployment config
 - `.prettierrc` - Shared formatting (single quotes, 2-space indent)

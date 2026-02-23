@@ -1,5 +1,5 @@
-import { useMutation } from '@tanstack/react-query';
 import Api from '@/lib/api/Api';
+import { useMutationWithCallbacks, type UseMutationWithCallbacksOptions } from '@/hooks/use-mutation-with-callbacks';
 
 interface PasswordResetRequestParams {
   email: string;
@@ -11,19 +11,13 @@ interface UsePasswordResetRequestOptions {
 }
 
 export function useCreatePasswordResetRequest(options?: UsePasswordResetRequestOptions) {
-  const { mutate, isPending } = useMutation({
-    mutationFn: (data: PasswordResetRequestParams) => {
-      return Api.auth.createToken({
-        email: data.email,
-      });
+  const { mutate, isPending } = useMutationWithCallbacks(
+    (data: PasswordResetRequestParams) => Api.auth.createToken({ email: data.email }),
+    {
+      onSuccess: (variables) => options?.onSuccess?.(variables?.email ?? ''),
+      onError: options?.onError,
     },
-    onSuccess: (_, variables) => {
-      options?.onSuccess?.(variables.email);
-    },
-    onError: (error) => {
-      options?.onError?.(error);
-    },
-  });
+  );
 
   return { createPasswordResetRequest: mutate, isBusy: isPending };
 }

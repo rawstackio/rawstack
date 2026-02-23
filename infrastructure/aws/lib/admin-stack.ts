@@ -3,10 +3,14 @@ import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as s3deploy from 'aws-cdk-lib/aws-s3-deployment';
 import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
 import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
+import * as acm from 'aws-cdk-lib/aws-certificatemanager';
+import * as route53 from 'aws-cdk-lib/aws-route53';
+import * as targets from 'aws-cdk-lib/aws-route53-targets';
 import { Construct } from 'constructs';
 import { CfnOutput, RemovalPolicy, Tags } from 'aws-cdk-lib';
 import * as path from 'path';
 import * as fs from 'fs';
+import { DomainConfig, getHostedZone, isDomainConfigEnabled, toWwwDomain } from './domain';
 
 /**
  * Configuration interface for AdminStack
@@ -22,6 +26,9 @@ interface AdminStackConfig {
   // Infrastructure configuration
   readonly environment?: string;
   readonly enableDeletionProtection?: boolean;
+
+  /** Optional custom domain configuration. */
+  readonly domain?: DomainConfig;
 }
 
 /**
@@ -47,6 +54,9 @@ export class AdminStack extends cdk.Stack {
   // Resource references for cross-stack usage
   public readonly websiteBucket: s3.Bucket;
   public readonly distribution: cloudfront.Distribution;
+
+  /** The configured custom domain name (if enabled). */
+  public customDomainName?: string;
 
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
@@ -103,9 +113,32 @@ export class AdminStack extends cdk.Stack {
       priceClass,
       environment: process.env.ENVIRONMENT || AdminStack.DEFAULT_ENVIRONMENT,
       enableDeletionProtection: process.env.ENABLE_DELETION_PROTECTION === 'true',
+      domain: this.loadDomainConfigFromEnv(),
     };
 
     return config;
+  }
+
+  private loadDomainConfigFromEnv(): DomainConfig | undefined {
+    const enabled = process.env.ADMIN_DOMAIN_ENABLED === 'true';
+    if (!enabled) return undefined;
+
+    const hostedZoneName = process.env.DOMAIN_HOSTED_ZONE_NAME;
+    const hostedZoneId = process.env.DOMAIN_HOSTED_ZONE_ID;
+    const domainName = process.env.ADMIN_DOMAIN_NAME;
+
+    if (!hostedZoneName || !domainName) {
+      throw new Error(
+        'ADMIN_DOMAIN_ENABLED is true but DOMAIN_HOSTED_ZONE_NAME and/or ADMIN_DOMAIN_NAME are not set.'
+      );
+    }
+
+    return {
+      hostedZoneName,
+      hostedZoneId,
+      domainName,
+      addWww: process.env.ADMIN_DOMAIN_ADD_WWW === 'true',
+    };
   }
 
   /**
@@ -160,6 +193,8 @@ export class AdminStack extends cdk.Stack {
       originAccessControl: oac,
     });
 
+    const { aliases, certificate } = this.maybeCreateDomainForCloudFront(config.domain);
+
     // Create CloudFront distribution
     const distribution = new cloudfront.Distribution(this, 'AdminDistribution', {
       defaultBehavior: {
@@ -175,9 +210,55 @@ export class AdminStack extends cdk.Stack {
       priceClass: config.priceClass,
       enabled: true,
       comment: `${this.stackName} Admin Website Distribution`,
+      domainNames: aliases,
+      certificate,
     });
 
+    if (isDomainConfigEnabled(config.domain)) {
+      this.createRoute53RecordsForCloudFront(config.domain, distribution);
+    }
+
     return distribution;
+  }
+
+  private maybeCreateDomainForCloudFront(domain?: DomainConfig): {
+    aliases?: string[];
+    certificate?: acm.ICertificate;
+  } {
+    if (!isDomainConfigEnabled(domain)) return {};
+
+    // CloudFront certificates must be in us-east-1.
+    const hostedZone = getHostedZone(this, domain, 'AdminHostedZoneCert');
+    const cert = new acm.Certificate(this, 'AdminDomainCertificate', {
+      domainName: domain.domainName,
+      validation: acm.CertificateValidation.fromDns(hostedZone),
+      subjectAlternativeNames: domain.addWww ? [toWwwDomain(domain.domainName)] : undefined,
+    });
+
+    const aliases = [domain.domainName];
+    if (domain.addWww) aliases.push(toWwwDomain(domain.domainName));
+
+    this.customDomainName = domain.domainName;
+
+    return { aliases, certificate: cert };
+  }
+
+  private createRoute53RecordsForCloudFront(domain: DomainConfig, distribution: cloudfront.Distribution): void {
+    const zone = getHostedZone(this, domain, 'AdminHostedZoneRecords');
+
+    new route53.ARecord(this, 'AdminAliasRecord', {
+      zone,
+      recordName: domain.domainName,
+      target: route53.RecordTarget.fromAlias(new targets.CloudFrontTarget(distribution)),
+    });
+
+    if (domain.addWww) {
+      new route53.ARecord(this, 'AdminAliasRecordWww', {
+        zone,
+        recordName: toWwwDomain(domain.domainName),
+        target: route53.RecordTarget.fromAlias(new targets.CloudFrontTarget(distribution)),
+      });
+    }
   }
 
   /**
@@ -244,5 +325,19 @@ export class AdminStack extends cdk.Stack {
       description: 'Admin website URL',
       exportName: `${this.stackName}-WebsiteUrl`,
     });
+
+    if (this.customDomainName) {
+      new CfnOutput(this, 'CustomDomainName', {
+        value: this.customDomainName,
+        description: 'Custom domain name (if configured)',
+        exportName: `${this.stackName}-CustomDomainName`,
+      });
+
+      new CfnOutput(this, 'CustomDomainUrl', {
+        value: `https://${this.customDomainName}`,
+        description: 'Custom domain URL (HTTPS)',
+        exportName: `${this.stackName}-CustomDomainUrl`,
+      });
+    }
   }
 }

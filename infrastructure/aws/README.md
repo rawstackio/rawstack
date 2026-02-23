@@ -11,7 +11,7 @@ This directory contains the unified AWS CDK infrastructure for all RawStack stac
 
 ## Benefits of Unified CDK App
 
-All three stacks now live under the same CDK app, which provides:
+All three stacks live under the same CDK app, which provides:
 
 1. **Easier cross-stack references** - Stacks can directly reference resources from other stacks
 2. **Simplified dependency management** - Single `package.json` and `node_modules`
@@ -92,9 +92,3 @@ Watch mode for continuous compilation:
 ```bash
 npm run watch
 ```
-
-## Migration from Separate Stacks
-
-The individual stack directories (`core-stack/`, `web-stack/`, `admin-stack/`) are preserved with their original structure. The unified app at `bin/app.ts` imports the stack classes from their original locations, so no code changes were needed to the stack implementations.
-
-The old bin files in each stack directory are no longer used. Instead, use the unified `bin/app.ts` which instantiates all stacks together.

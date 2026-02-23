@@ -12,6 +12,20 @@ import { z } from 'zod';
 import { ApiError } from '@/lib/api/exception/errors';
 import { toast } from 'sonner';
 import { useUpdateAccount } from '@/hooks/user/use-update-account';
+import { useDeleteAccount } from '@/hooks/user/use-delete-account';
+import { UnverifiedEmailBanner } from '@/components/unverified-email-banner';
+import { useAuth } from '@/lib/context/auth-context';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 type Props = {
   user: UserModel;
@@ -63,6 +77,7 @@ const schema = z
 type Inputs = z.infer<typeof schema>;
 
 export const AccountForm = ({ className, user, ...props }: Props) => {
+  const { logout } = useAuth();
   const {
     register,
     handleSubmit,
@@ -86,6 +101,16 @@ export const AccountForm = ({ className, user, ...props }: Props) => {
     },
   });
 
+  const { deleteAccount, isBusy: isDeleting } = useDeleteAccount({
+    onSuccess: () => {
+      toast.success('Account deleted successfully');
+      logout();
+    },
+    onError: () => {
+      toast.error('Failed to delete account. Try again later!');
+    },
+  });
+
   const onSubmit = (data: Inputs) => {
     updateAccount({
       userId: user.id,
@@ -96,6 +121,7 @@ export const AccountForm = ({ className, user, ...props }: Props) => {
 
   return (
     <div className={cn('flex flex-col gap-6', className)} {...props}>
+      <UnverifiedEmailBanner user={user} />
       <div className={'border-0 bg-transparent'}>
         <form onSubmit={handleSubmit(onSubmit)}>
           <div className="flex flex-col gap-6">
@@ -125,12 +151,31 @@ export const AccountForm = ({ className, user, ...props }: Props) => {
               {errors.confirmPassword && <span className={'text-sm'}>{errors.confirmPassword.message}</span>}
             </div>
             <div className="flex flex-col gap-3">
-              <Button type="submit" className="w-full" disabled={isBusy || !isValid}>
+              <Button type="submit" className="w-full" disabled={isBusy || isDeleting || !isValid}>
                 Update
               </Button>
-              <Button className="w-full" variant={'outline'}>
-                Delete Account
-              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button type="button" className="w-full" variant={'outline'} disabled={isDeleting || isBusy}>
+                    Delete Account
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This action cannot be undone. This will permanently delete your account and remove all of your
+                      data from our servers.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => deleteAccount({ userId: user.id })}>
+                      Delete Account
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           </div>
         </form>

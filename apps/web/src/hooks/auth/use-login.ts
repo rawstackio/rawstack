@@ -1,25 +1,10 @@
-import { useMutation } from '@tanstack/react-query';
 import { useAuth, UserCredentials } from '@/lib/context/auth-context';
+import { useMutationWithCallbacks, type UseMutationWithCallbacksOptions } from '@/hooks/use-mutation-with-callbacks';
 
-interface UseLoginOptions {
-  onSuccess?: () => void;
-  onError?: (error: unknown) => void;
-}
-
-export function useLogin(options?: UseLoginOptions) {
+export function useLogin(options?: UseMutationWithCallbacksOptions) {
   const { login } = useAuth();
 
-  const { mutate, isPending } = useMutation({
-    mutationFn: (credentials: UserCredentials) => {
-      return login(credentials);
-    },
-    onSuccess: () => {
-      options?.onSuccess?.();
-    },
-    onError: (error) => {
-      options?.onError?.(error);
-    },
-  });
+  const { mutate, isPending } = useMutationWithCallbacks((credentials: UserCredentials) => login(credentials), options);
 
   return { login: mutate, isBusy: isPending };
 }
