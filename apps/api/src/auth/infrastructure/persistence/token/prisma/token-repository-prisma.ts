@@ -109,7 +109,7 @@ export class TokenRepositoryPrisma extends BaseRepositoryPrisma implements Token
   }
 
   async findTokenUserByEmail(email: Email, role?: string): Promise<{ hash: string; id: Id }> {
-    let where: Prisma.UserWhereUniqueInput = { email: email.toString() };
+    let where: Prisma.UserWhereUniqueInput = { email: email.toString(), deletedAt: null };
     if (role) {
       where = {
         ...where,

@@ -4,6 +4,7 @@ import styled from 'styled-components/native';
 import CloseButton from '../Button/CloseButton';
 import SettingsPasswordForm from './SettingsPasswordForm';
 import SettingsEmailForm from './SettingsEmailForm';
+import { useAuth } from '../../lib/context/AuthContext.tsx';
 
 interface Props {
   type?: 'password' | 'email';
@@ -11,24 +12,24 @@ interface Props {
 }
 
 export const SettingsModal = ({ onClose, type }: Props) => {
+  const { refreshUser } = useAuth();
+
+  const onSuccess = async () => {
+    await refreshUser();
+    onClose();
+  };
+
   return (
-    <Modal
-      visible={!!type}
-      animationType={'fade'}
-      transparent={true}
-      presentationStyle="overFullScreen"
-    >
+    <Modal visible={!!type} animationType={'fade'} transparent={true} presentationStyle="overFullScreen">
       <ModalContainer>
         <ModalContentContainer>
           <ModalCloseButton onPress={onClose} size={24} />
-          <ModalHeading>
-            {type === 'email' ? 'Update Email' : 'Update Password'}
-          </ModalHeading>
+          <ModalHeading>{type === 'email' ? 'Update Email' : 'Update Password'}</ModalHeading>
           <ModalContent>
             {type === 'email' ? (
-              <SettingsEmailForm onUpdated={onClose} />
+              <SettingsEmailForm onUpdated={onSuccess} />
             ) : (
-              <SettingsPasswordForm onUpdated={onClose} />
+              <SettingsPasswordForm onUpdated={onSuccess} />
             )}
           </ModalContent>
         </ModalContentContainer>

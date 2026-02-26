@@ -1,5 +1,5 @@
-import { useMutation } from '@tanstack/react-query';
 import Api from '@/lib/api/Api';
+import { useMutationWithCallbacks, type UseMutationWithCallbacksOptions } from '@/hooks/use-mutation-with-callbacks';
 
 interface UpdateAccountParams {
   userId: string;
@@ -7,26 +7,15 @@ interface UpdateAccountParams {
   password?: string;
 }
 
-interface UseUpdateAccountOptions {
-  onSuccess?: () => void;
-  onError?: (error: unknown) => void;
-}
-
-export function useUpdateAccount(options?: UseUpdateAccountOptions) {
-  const { mutate, isPending } = useMutation({
-    mutationFn: (data: UpdateAccountParams) => {
-      return Api.user.updateUser(data.userId, {
+export function useUpdateAccount(options?: UseMutationWithCallbacksOptions<UpdateAccountParams>) {
+  const { mutate, isPending } = useMutationWithCallbacks(
+    (data: UpdateAccountParams) =>
+      Api.user.updateUser(data.userId, {
         email: data.email,
         password: data.password || undefined,
-      });
-    },
-    onSuccess: () => {
-      options?.onSuccess?.();
-    },
-    onError: (error) => {
-      options?.onError?.(error);
-    },
-  });
+      }),
+    options,
+  );
 
   return { updateAccount: mutate, isBusy: isPending };
 }

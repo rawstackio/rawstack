@@ -2,23 +2,16 @@ import React, { useState } from 'react';
 import Screen from '../components/Template/Screen';
 import SignupForm from '../components/Auth/SignupForm';
 import styled from 'styled-components/native';
-import UserModel from '../lib/model/UserModel';
-import { useAuth, UserCredentials } from '../lib/context/AuthContext';
 import LoginForm from '../components/Auth/LoginForm';
 import PasswordResetRequestForm from '../components/Auth/PasswordResetRequestForm';
-import { AuthenticationError } from '../lib/api/exception/errors';
 import Banner from '../components/Banner/Banner';
 
 type displayForm = 'login' | 'signup' | 'password';
 
 const AuthScreen = () => {
-  const { login } = useAuth();
   const [showForm, setShowForm] = useState<displayForm>('login');
-  const [isBusy, setIsBusy] = useState(false);
-  const [formErrors, setFormErrors] = useState<string[]>([]);
 
   const onSwitchForms = () => {
-    setFormErrors([]);
     switch (showForm) {
       case 'password':
       case 'signup':
@@ -27,28 +20,6 @@ const AuthScreen = () => {
       default:
         setShowForm('signup');
     }
-  };
-
-  const onLogin = async (credentials: UserCredentials) => {
-    setIsBusy(true);
-    try {
-      await login(credentials);
-      setIsBusy(false);
-    } catch (error) {
-      if (error instanceof AuthenticationError) {
-        setFormErrors([error.message]);
-      }
-      setIsBusy(false);
-    }
-  };
-
-  const onSignupSuccess = async (
-    user: UserModel,
-    credentials: UserCredentials,
-  ) => {
-    setIsBusy(true);
-    await login(credentials, user);
-    setIsBusy(false);
   };
 
   const headingText = () => {
@@ -67,24 +38,20 @@ const AuthScreen = () => {
       case 'password':
         return (
           <RegisterText>
-            {
-              'A password rest link will be sent to your email if it exists in our system.'
-            }{' '}
+            {'A password rest link will be sent to your email if it exists in our system.'}{' '}
             <RegisterTextLink>{'Login'}</RegisterTextLink>
           </RegisterText>
         );
       case 'signup':
         return (
           <RegisterText>
-            {'Already registered?'}{' '}
-            <RegisterTextLink>{'Login'}</RegisterTextLink>
+            {'Already registered?'} <RegisterTextLink>{'Login'}</RegisterTextLink>
           </RegisterText>
         );
       default:
         return (
           <RegisterText>
-            {'Not registered yet?'}{' '}
-            <RegisterTextLink>{'Create an Account'}</RegisterTextLink>
+            {'Not registered yet?'} <RegisterTextLink>{'Create an Account'}</RegisterTextLink>
           </RegisterText>
         );
     }
@@ -97,29 +64,15 @@ const AuthScreen = () => {
   const renderForm = () => {
     switch (showForm) {
       case 'password':
-        return (
-          <PasswordResetRequestForm isBusy={isBusy} formErrors={formErrors} />
-        );
+        return <PasswordResetRequestForm />;
       case 'signup':
-        return (
-          <SignupForm
-            onUserCreated={onSignupSuccess}
-            isBusy={isBusy}
-            formErrors={formErrors}
-          />
-        );
+        return <SignupForm />;
       default:
         return (
           <>
-            <LoginForm
-              onLogin={onLogin}
-              isBusy={isBusy}
-              formErrors={formErrors}
-            />
+            <LoginForm />
             <PasswordResetLink onPress={showPasswordResetForm}>
-              <PasswordRestText onPress={showPasswordResetForm}>
-                Forgot password?
-              </PasswordRestText>
+              <PasswordRestText onPress={showPasswordResetForm}>Forgot password?</PasswordRestText>
             </PasswordResetLink>
           </>
         );

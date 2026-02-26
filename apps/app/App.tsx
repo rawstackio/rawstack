@@ -7,6 +7,7 @@ import UiProvider from './src/lib/context/AppContext';
 import AppContainer from './src/components/Template/AppContainer';
 import { initDate } from './src/lib/boot/initDate';
 import AuthProvider from './src/lib/context/AuthContext';
+import { QueryProvider } from './src/lib/provider/QueryProvider.tsx';
 
 function App() {
   const isDarkMode = useColorScheme() === 'dark';
@@ -22,9 +23,11 @@ function App() {
     <UiProvider>
       <SafeAreaProvider>
         <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-        <AuthProvider>
-          <AppContainer />
-        </AuthProvider>
+        <QueryProvider>
+          <AuthProvider>
+            <AppContainer />
+          </AuthProvider>
+        </QueryProvider>
       </SafeAreaProvider>
     </UiProvider>
   );

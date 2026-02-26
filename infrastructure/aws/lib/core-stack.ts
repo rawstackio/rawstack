@@ -14,6 +14,23 @@ import * as iam from "aws-cdk-lib/aws-iam";
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { Runtime } from 'aws-cdk-lib/aws-lambda';
 import * as path from 'path';
+import * as acm from 'aws-cdk-lib/aws-certificatemanager';
+import * as route53 from 'aws-cdk-lib/aws-route53';
+import * as r53Targets from 'aws-cdk-lib/aws-route53-targets';
+import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
+import { DomainConfig, getHostedZone, isDomainConfigEnabled, toWwwDomain } from './domain';
+
+/** How Redis should be provisioned. */
+type RedisMode = 'single' | 'cluster';
+
+/** Normalized Redis connection info we inject into the app container + output. */
+interface RedisConnectionInfo {
+  readonly host: string;
+  readonly port: string;
+}
+
+/** Represents the provisioned Redis resource(s) in this stack. */
+type RedisResource = elasticache.CfnCacheCluster | elasticache.CfnReplicationGroup;
 
 /**
  * Configuration interface for CoreStack
@@ -39,6 +56,15 @@ interface CoreStackConfig {
   readonly maxAzs?: number;
   readonly natGateways?: number;
   readonly enableDeletionProtection?: boolean;
+
+  // Redis configuration
+  readonly redisMode?: RedisMode;
+  /** Used when redisMode==='cluster'. If not provided we default based on ENVIRONMENT. */
+  readonly redisReplicaCount?: number;
+  readonly redisNodeType?: string;
+
+  /** Optional custom domain configuration. */
+  readonly domain?: DomainConfig;
 }
 
 /**
@@ -68,13 +94,19 @@ export class CoreStack extends cdk.Stack {
   private static readonly DEFAULT_AUTOSCALING_MAX_CAPACITY = 10;
   private static readonly DEFAULT_AUTOSCALING_CPU_TARGET = 70;
   private static readonly DEFAULT_AUTOSCALING_MEMORY_TARGET = 70;
+  private static readonly DEFAULT_REDIS_NODE_TYPE = 'cache.t4g.micro';
+  private static readonly DEFAULT_REDIS_REPLICA_COUNT = 1;
 
   // Resource references for cross-stack usage
   public readonly vpc: ec2.Vpc;
   public readonly database: rds.DatabaseInstance;
-  public readonly redis: elasticache.CfnCacheCluster;
+  public readonly redis: RedisResource;
+  private redisConnection?: RedisConnectionInfo;
   public readonly cluster: ecs.Cluster;
   public readonly fargateService: ecsPatterns.ApplicationLoadBalancedFargateService;
+
+  /** The configured custom domain name (if enabled). */
+  public customDomainName?: string;
 
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
@@ -99,7 +131,9 @@ export class CoreStack extends cdk.Stack {
     this.fargateService = this.createFargateService(config, databaseSecret);
 
     // Create Redis cache cluster
-    this.redis = this.createRedisCluster();
+    const { redis, connection } = this.createRedis(config);
+    this.redis = redis;
+    this.redisConnection = connection;
 
     // Configure auto-scaling for ECS service
     this.configureAutoScaling();
@@ -153,10 +187,35 @@ export class CoreStack extends cdk.Stack {
       natGateways: process.env.CORE_NAT_GATEWAYS
         ? parseInt(process.env.CORE_NAT_GATEWAYS)
         : CoreStack.DEFAULT_NAT_GATEWAYS,
-      enableDeletionProtection: process.env.ENABLE_DELETION_PROTECTION === 'true'
+      enableDeletionProtection: process.env.ENABLE_DELETION_PROTECTION === 'true',
+      domain: this.loadDomainConfigFromEnv(),
+
+      redisMode: (process.env.CORE_REDIS_MODE as RedisMode | undefined) ?? 'single',
+      redisReplicaCount: process.env.CORE_REDIS_REPLICA_COUNT ? parseInt(process.env.CORE_REDIS_REPLICA_COUNT, 10) : undefined,
+      redisNodeType: process.env.CORE_REDIS_NODE_TYPE || CoreStack.DEFAULT_REDIS_NODE_TYPE,
     };
 
     return config;
+  }
+
+  private loadDomainConfigFromEnv(): DomainConfig | undefined {
+    const enabled = process.env.CORE_DOMAIN_ENABLED === 'true';
+    if (!enabled) return undefined;
+
+    const hostedZoneName = process.env.DOMAIN_HOSTED_ZONE_NAME;
+    const hostedZoneId = process.env.DOMAIN_HOSTED_ZONE_ID;
+    const domainName = process.env.CORE_DOMAIN_NAME;
+
+    if (!hostedZoneName || !domainName) {
+      throw new Error('CORE_DOMAIN_ENABLED is true but DOMAIN_HOSTED_ZONE_NAME and/or CORE_DOMAIN_NAME are not set.');
+    }
+
+    return {
+      hostedZoneName,
+      hostedZoneId,
+      domainName,
+      addWww: process.env.CORE_DOMAIN_ADD_WWW === 'true',
+    };
   }
 
   /**
@@ -382,6 +441,11 @@ export class CoreStack extends cdk.Stack {
       }
     );
 
+    // When a domain is enabled, terminate TLS on the ALB and redirect HTTP to HTTPS.
+    if (isDomainConfigEnabled(config.domain)) {
+      this.configureAlbHttps(config.domain, fargateService);
+    }
+
     // Configure target group health check
     fargateService.targetGroup.configureHealthCheck({
       path: '/v1/health',
@@ -396,41 +460,76 @@ export class CoreStack extends cdk.Stack {
     return fargateService;
   }
 
+  private configureAlbHttps(domain: DomainConfig, fargateService: ecsPatterns.ApplicationLoadBalancedFargateService): void {
+    const zone = getHostedZone(this, domain, 'CoreHostedZone');
+
+    const cert = new acm.Certificate(this, 'CoreApiDomainCertificate', {
+      domainName: domain.domainName,
+      validation: acm.CertificateValidation.fromDns(zone),
+      subjectAlternativeNames: domain.addWww ? [toWwwDomain(domain.domainName)] : undefined,
+    });
+
+    // HTTPS listener.
+    const httpsListener = fargateService.loadBalancer.addListener('HttpsListener', {
+      port: 443,
+      certificates: [cert],
+      protocol: elbv2.ApplicationProtocol.HTTPS,
+      sslPolicy: elbv2.SslPolicy.RECOMMENDED_TLS,
+      open: true,
+    });
+
+    // Forward HTTPS traffic to the same target group used by the ECS pattern.
+    // (This allows us to keep the original HTTP listener default forward action unchanged.)
+    httpsListener.addTargetGroups('HttpsToServiceTargetGroup', { targetGroups: [fargateService.targetGroup] });
+
+    // HTTP listener: redirect *all* HTTP requests to HTTPS.
+    // We add a high-priority rule (rather than replacing the default action) to avoid
+    // CDK warnings about default actions being replaced.
+    fargateService.listener.addAction('HttpRedirectToHttpsRule', {
+      priority: 1,
+      conditions: [elbv2.ListenerCondition.pathPatterns(['/*'])],
+      action: elbv2.ListenerAction.redirect({
+        protocol: 'HTTPS',
+        port: '443',
+        permanent: true,
+      }),
+    });
+
+    // Route53 alias record(s)
+    new route53.ARecord(this, 'CoreApiAliasRecord', {
+      zone,
+      recordName: domain.domainName,
+      target: route53.RecordTarget.fromAlias(new r53Targets.LoadBalancerTarget(fargateService.loadBalancer)),
+    });
+
+    if (domain.addWww) {
+      new route53.ARecord(this, 'CoreApiAliasRecordWww', {
+        zone,
+        recordName: toWwwDomain(domain.domainName),
+        target: route53.RecordTarget.fromAlias(new r53Targets.LoadBalancerTarget(fargateService.loadBalancer)),
+      });
+    }
+
+    this.customDomainName = domain.domainName;
+  }
+
   /**
-   * Creates Redis (ElastiCache) cluster
+   * Creates Redis as either a single-node cache cluster or a replication group.
    *
-   * @remarks
-   * Redis cluster is placed in private subnets for security
-   * ECS tasks can connect to Redis through the configured security group
+   * - single: cheapest/dev-friendly
+   * - cluster: prod-friendly (primary + replicas, automatic failover)
    */
-  private createRedisCluster(): elasticache.CfnCacheCluster {
-    // Create security group for Redis
+  private createRedis(config: CoreStackConfig): { redis: RedisResource; connection: RedisConnectionInfo } {
     const redisSecurityGroup = new ec2.SecurityGroup(this, 'CoreRedisSecurityGroup', {
       vpc: this.vpc,
-      description: 'Security group for Redis cluster',
+      description: 'Security group for Redis',
       allowAllOutbound: true,
     });
 
-    // Create subnet group for Redis in private subnets
     const redisSubnetGroup = new elasticache.CfnSubnetGroup(this, 'CoreRedisSubnetGroup', {
-      description: 'Subnet group for Redis cluster',
-      subnetIds: this.vpc.selectSubnets({
-        subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS,
-      }).subnetIds,
+      description: 'Subnet group for Redis',
+      subnetIds: this.vpc.selectSubnets({ subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS }).subnetIds,
     });
-
-    // Create single-node Redis cache cluster
-    const redis = new elasticache.CfnCacheCluster(this, 'CoreRedisCluster', {
-      engine: 'redis',
-      cacheNodeType: 'cache.t4g.micro',
-      numCacheNodes: 1,
-      port: CoreStack.DEFAULT_REDIS_PORT,
-      cacheSubnetGroupName: redisSubnetGroup.ref,
-      vpcSecurityGroupIds: [redisSecurityGroup.securityGroupId],
-    });
-
-    // Ensure subnet group is created first
-    redis.addDependency(redisSubnetGroup);
 
     // Allow ECS tasks to connect to Redis
     const ecsSecurityGroup = this.fargateService.service.connections.securityGroups[0];
@@ -440,17 +539,69 @@ export class CoreStack extends cdk.Stack {
       'Allow ECS tasks to connect to Redis'
     );
 
-    // Provide Redis endpoint details to the container
-    this.fargateService.taskDefinition.defaultContainer?.addEnvironment(
-      'REDIS_HOST',
-      redis.attrRedisEndpointAddress
-    );
-    this.fargateService.taskDefinition.defaultContainer?.addEnvironment(
-      'REDIS_PORT',
-      redis.attrRedisEndpointPort
-    );
+    const mode: RedisMode = config.redisMode ?? 'single';
 
-    return redis;
+    if (mode === 'cluster') {
+      const env = (config.environment || CoreStack.DEFAULT_ENVIRONMENT).toLowerCase();
+      const defaultReplicaCount = CoreStack.DEFAULT_REDIS_REPLICA_COUNT;
+
+      // ReplicationGroup gives us primary+replicas and an endpoint suitable for clients.
+      const rg = new elasticache.CfnReplicationGroup(this, 'CoreRedisReplicationGroup', {
+        replicationGroupDescription: 'Redis replication group for CoreStack',
+        engine: 'redis',
+        cacheNodeType: config.redisNodeType || CoreStack.DEFAULT_REDIS_NODE_TYPE,
+        automaticFailoverEnabled: true,
+        multiAzEnabled: true,
+        cacheSubnetGroupName: redisSubnetGroup.ref,
+        securityGroupIds: [redisSecurityGroup.securityGroupId],
+        atRestEncryptionEnabled: true,
+        transitEncryptionEnabled: false,
+        numNodeGroups: 1,
+        replicasPerNodeGroup: (config.redisReplicaCount ?? defaultReplicaCount),
+        port: CoreStack.DEFAULT_REDIS_PORT,
+      });
+
+      rg.addDependency(redisSubnetGroup);
+
+      const connection: RedisConnectionInfo = {
+        host: rg.attrPrimaryEndPointAddress,
+        port: rg.attrPrimaryEndPointPort,
+      };
+
+      this.fargateService.taskDefinition.defaultContainer?.addEnvironment('REDIS_HOST', connection.host);
+      this.fargateService.taskDefinition.defaultContainer?.addEnvironment('REDIS_PORT', connection.port);
+
+      return { redis: rg, connection };
+    }
+
+    // Default: single-node cache cluster
+    const cc = new elasticache.CfnCacheCluster(this, 'CoreRedisCluster', {
+      engine: 'redis',
+      cacheNodeType: config.redisNodeType || CoreStack.DEFAULT_REDIS_NODE_TYPE,
+      numCacheNodes: 1,
+      port: CoreStack.DEFAULT_REDIS_PORT,
+      cacheSubnetGroupName: redisSubnetGroup.ref,
+      vpcSecurityGroupIds: [redisSecurityGroup.securityGroupId],
+    });
+
+    cc.addDependency(redisSubnetGroup);
+
+    const connection: RedisConnectionInfo = {
+      host: cc.attrRedisEndpointAddress,
+      port: cc.attrRedisEndpointPort,
+    };
+
+    this.fargateService.taskDefinition.defaultContainer?.addEnvironment('REDIS_HOST', connection.host);
+    this.fargateService.taskDefinition.defaultContainer?.addEnvironment('REDIS_PORT', connection.port);
+
+    return { redis: cc, connection };
+  }
+
+  /**
+   * @deprecated Use createRedis(). Kept only to avoid accidental external references.
+   */
+  private createRedisCluster(): elasticache.CfnCacheCluster {
+    return this.createRedis({ redisMode: 'single', redisNodeType: CoreStack.DEFAULT_REDIS_NODE_TYPE } as CoreStackConfig).redis as elasticache.CfnCacheCluster;
   }
 
   /**
@@ -559,6 +710,46 @@ export class CoreStack extends cdk.Stack {
   }
 
   /**
+   * Type guard to check if the Redis resource is a CfnCacheCluster
+   */
+  private isRedisCluster(redis: RedisResource): redis is elasticache.CfnCacheCluster {
+    return (redis as elasticache.CfnCacheCluster).attrRedisEndpointAddress !== undefined;
+  }
+
+  /**
+   * Type guard to check if the Redis resource is a CfnReplicationGroup
+   */
+  private isRedisReplicationGroup(redis: RedisResource): redis is elasticache.CfnReplicationGroup {
+    return (redis as elasticache.CfnReplicationGroup).attrPrimaryEndPointAddress !== undefined;
+  }
+
+  /**
+   * Gets the Redis endpoint address based on the resource type
+   */
+  private getRedisEndpointAddress(): string {
+    if (this.isRedisCluster(this.redis)) {
+      return this.redis.attrRedisEndpointAddress;
+    }
+    if (this.isRedisReplicationGroup(this.redis)) {
+      return this.redis.attrPrimaryEndPointAddress;
+    }
+    throw new Error('Unknown Redis resource type');
+  }
+
+  /**
+   * Gets the Redis endpoint port based on the resource type
+   */
+  private getRedisEndpointPort(): string {
+    if (this.isRedisCluster(this.redis)) {
+      return this.redis.attrRedisEndpointPort;
+    }
+    if (this.isRedisReplicationGroup(this.redis)) {
+      return this.redis.attrPrimaryEndPointPort;
+    }
+    throw new Error('Unknown Redis resource type');
+  }
+
+  /**
    * Creates CloudFormation outputs for important resources
    */
   private createOutputs(databaseSecret: secretsmanager.ISecret): void {
@@ -586,13 +777,13 @@ export class CoreStack extends cdk.Stack {
     });
 
     new CfnOutput(this, 'RedisEndpoint', {
-      value: this.redis.attrRedisEndpointAddress,
+      value: this.redisConnection?.host ?? this.getRedisEndpointAddress(),
       description: 'Redis endpoint address',
       exportName: `${this.stackName}-RedisEndpoint`,
     });
 
     new CfnOutput(this, 'RedisPort', {
-      value: this.redis.attrRedisEndpointPort,
+      value: this.redisConnection?.port ?? this.getRedisEndpointPort(),
       description: 'Redis endpoint port',
       exportName: `${this.stackName}-RedisPort`,
     });
@@ -640,5 +831,19 @@ export class CoreStack extends cdk.Stack {
       description: 'ECS Cluster name',
       exportName: `${this.stackName}-EcsClusterName`,
     });
+
+    if (this.customDomainName) {
+      new CfnOutput(this, 'CustomDomainName', {
+        value: this.customDomainName,
+        description: 'Custom domain name (if configured)',
+        exportName: `${this.stackName}-CustomDomainName`,
+      });
+
+      new CfnOutput(this, 'CustomDomainUrl', {
+        value: `https://${this.customDomainName}`,
+        description: 'Custom domain URL (HTTPS)',
+        exportName: `${this.stackName}-CustomDomainUrl`,
+      });
+    }
   }
 }

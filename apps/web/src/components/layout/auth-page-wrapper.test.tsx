@@ -43,7 +43,7 @@ describe('AuthPageWrapper', () => {
 
   it('should redirect to home when user is authenticated and skipRedirect is false', async () => {
     vi.mocked(useAuth).mockReturnValue({
-      user: { id: 'user-123', email: 'test@example.com', roles: [], unverifiedEmail: false },
+      user: { id: 'user-123', email: 'test@example.com', roles: [], unverifiedEmail: undefined },
       login: vi.fn(),
       logout: vi.fn(),
       authModalIsOpen: false,
@@ -66,7 +66,7 @@ describe('AuthPageWrapper', () => {
 
   it('should redirect to home when user is authenticated and skipRedirect is not provided', async () => {
     vi.mocked(useAuth).mockReturnValue({
-      user: { id: 'user-123', email: 'test@example.com', roles: [], unverifiedEmail: false },
+      user: { id: 'user-123', email: 'test@example.com', roles: [], unverifiedEmail: undefined },
       login: vi.fn(),
       logout: vi.fn(),
       authModalIsOpen: false,
@@ -89,7 +89,7 @@ describe('AuthPageWrapper', () => {
 
   it('should NOT redirect when user is authenticated but skipRedirect is true', () => {
     vi.mocked(useAuth).mockReturnValue({
-      user: { id: 'user-123', email: 'test@example.com', roles: [], unverifiedEmail: false },
+      user: { id: 'user-123', email: 'test@example.com', roles: [], unverifiedEmail: undefined },
       login: vi.fn(),
       logout: vi.fn(),
       authModalIsOpen: false,

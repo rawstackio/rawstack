@@ -4,21 +4,20 @@ import { useForm, SubmitHandler, Controller } from 'react-hook-form';
 import Input from '../Input/Input';
 import { theme } from '../../lib/theme';
 import Button from '../Button/Button';
-import { UserCredentials } from '../../lib/context/AuthContext';
+import { useLogin } from '../../hooks/auth/use-login';
 
 type Inputs = {
   email: string;
   password: string;
-  errors?: string[];
 };
 
 interface Props {
-  onLogin: (credentials: UserCredentials) => void;
-  isBusy?: boolean;
-  formErrors?: string[];
+  onSuccess?: () => void;
 }
 
-const LoginForm = ({ formErrors, isBusy, onLogin }: Props) => {
+const LoginForm = ({ onSuccess }: Props) => {
+  const { login, isBusy, errorMessage } = useLogin({ onSuccess });
+
   const {
     control,
     handleSubmit,
@@ -26,16 +25,13 @@ const LoginForm = ({ formErrors, isBusy, onLogin }: Props) => {
   } = useForm<Inputs>();
 
   const onSubmit: SubmitHandler<Inputs> = data => {
-    onLogin(data);
+    login(data);
   };
 
   return (
     <Container>
       <Content>
-        {formErrors &&
-          formErrors.map((error, index) => (
-            <ErrorText key={index}>{error}</ErrorText>
-          ))}
+        {errorMessage && <ErrorText>{errorMessage}</ErrorText>}
         <InputWrapper>
           <Controller
             control={control}
@@ -89,12 +85,7 @@ const LoginForm = ({ formErrors, isBusy, onLogin }: Props) => {
         </InputWrapper>
       </Content>
       <Footer>
-        <Button
-          secondary={true}
-          onPress={handleSubmit(onSubmit)}
-          label={'Login'}
-          isBusy={isBusy}
-        />
+        <Button secondary={true} onPress={handleSubmit(onSubmit)} label={'Login'} isBusy={isBusy} />
       </Footer>
     </Container>
   );

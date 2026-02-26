@@ -1,6 +1,6 @@
 {
   "name": "rawstack-infrastructure",
-  "version": "v0.1.0-alpha.6",
+  "version": "v0.1.0-alpha.7",
   "description": "Unified CDK infrastructure for RawStack",
   "bin": {
     "app": "bin/app.js"
@@ -8,7 +8,7 @@
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w",
-    "test": "jest",
+    "test": "jest --passWithNoTests",
     "cdk": "cdk"
   },
   "devDependencies": {

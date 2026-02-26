@@ -30,6 +30,8 @@ export class UpdateUserService {
         throw new ConflictException(`email ${email.toString()} already exists`);
       }
       user.setUnverifiedEmail(dateNow, email);
+    } else if (email && user.unverifiedEmail && email.equals(user.unverifiedEmail)) {
+      user.setUnverifiedEmail(dateNow, email);
     }
 
     if (roles) {
