@@ -193,7 +193,7 @@ const UserTable = ({
             </SelectContent>
           </Select>
         </div>
-        <Button variant="outline" size="sm" onClick={() => addUser()}>
+        <Button variant="outline" size="sm" aria-label="Add User" onClick={() => addUser()}>
           <PlusIcon />
           <span className="hidden lg:inline">Add User</span>
         </Button>

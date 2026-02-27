@@ -6,7 +6,11 @@ import { Users } from '@/pages/users.tsx';
 import NewPassword from '@/pages/new-password.tsx';
 
 const AppContainer = () => {
-  const { user } = useAuth();
+  const { user, loaded } = useAuth();
+
+  if (!loaded) {
+    return null;
+  }
 
   return (
     <Router>

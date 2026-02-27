@@ -30,7 +30,7 @@ export const DashboardDrawer = () => {
     <Drawer direction={isMobile ? 'bottom' : 'right'} open={!!drawerAction} onOpenChange={(open) => !open && closeDrawer()}>
       <DrawerContent className={'border-l-rgb/10 dark:border-l-[rgba(125,125,125,0.05)]'}>
         <DrawerHeader className="p-0 bg-sidebar px-4 py-2 flex flex-row justify-between items-center">
-          <Button variant="ghost" size="sm" onClick={closeDrawer}>
+          <Button variant="ghost" size="sm" aria-label="Close" onClick={closeDrawer}>
             <XIcon />
           </Button>
         </DrawerHeader>

@@ -1,6 +1,9 @@
 {
   "name": "rawstack-web",
-  "version": "v0.1.0-alpha.7",
+  "version": "v0.1.0-alpha.8",
+  "description": "RawStack public website (Next.js).",
+  "author": "Dan Byrne",
+  "license": "MIT",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
@@ -10,7 +13,10 @@
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:run": "vitest run",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:report": "playwright show-report"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",
@@ -41,6 +47,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@playwright/test": "^1.58.2",
     "@tailwindcss/postcss": "^4",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",

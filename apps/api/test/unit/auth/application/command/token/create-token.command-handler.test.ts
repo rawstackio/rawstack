@@ -31,7 +31,12 @@ describe('CreateTokenCommandHandler', () => {
 
       await handler.execute(command);
 
-      expect(refreshTokenService.invoke).toHaveBeenCalledWith(id, email, password);
+      expect(refreshTokenService.invoke).toHaveBeenCalledWith(
+        expect.objectContaining({ value: id }),
+        expect.objectContaining({ value: email }),
+        password,
+        undefined,
+      );
     });
 
     test('it invokes the CreateRefreshTokenService with email and refresh token', async () => {
@@ -39,11 +44,16 @@ describe('CreateTokenCommandHandler', () => {
       const email = 'test@rawstack.io';
       const refreshToken = randomUUID();
 
-      const command = new CreateTokenCommand(id, email);
+      const command = new CreateTokenCommand(id, email, undefined, refreshToken);
 
       await handler.execute(command);
 
-      expect(refreshTokenService.invoke).toHaveBeenCalledWith(id, email, undefined, refreshToken);
+      expect(refreshTokenService.invoke).toHaveBeenCalledWith(
+        expect.objectContaining({ value: id }),
+        expect.objectContaining({ value: email }),
+        undefined,
+        refreshToken,
+      );
     });
 
     // test('it rethrowsun known errors', async () => {

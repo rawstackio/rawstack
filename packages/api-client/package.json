@@ -1,15 +1,15 @@
 {
   "name": "@rawstack/api-client",
-  "version": "v0.1.0-alpha.7",
+  "version": "v0.1.0-alpha.8",
   "description": "openapi client for the rawstack api",
-  "author": "rawstackio",
+  "author": "Dan Byrne",
   "private": true,
   "keywords": [
     "typescript",
     "swagger-client",
     "@rawstack/api-client"
   ],
-  "license": "Unlicense",
+  "license": "MIT",
   "main": "./build/index.js",
   "typings": "./build/index.d.ts",
   "scripts": {

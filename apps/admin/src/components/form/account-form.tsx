@@ -78,6 +78,7 @@ export function AccountForm({ userId }: Props) {
     formState: { errors, isValid },
   } = useForm<Inputs>({
     resolver: zodResolver(schema),
+    mode: 'onChange',
     values: accountUser ? { email: accountUser.email } : undefined,
   });
 
@@ -117,7 +118,7 @@ export function AccountForm({ userId }: Props) {
           <label className="text-sm font-medium leading-none">Id</label>
           <div className="flex gap-2">
             <Input value={accountUser?.id} readOnly className="flex-1 font-mono text-sm" />
-            <Button type={'button'} variant="outline" size="icon" onClick={() => copyToClipboard(accountUser?.id)}>
+            <Button type={'button'} variant="outline" size="icon" aria-label={hasCopiedText ? 'clipboard-check' : 'clipboard'} onClick={() => copyToClipboard(accountUser?.id)}>
               {hasCopiedText ? <IconClipboardCheck size={16} /> : <IconClipboardCopy size={16} />}
             </Button>
           </div>

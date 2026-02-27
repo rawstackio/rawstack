@@ -25,3 +25,6 @@ dist-ssr
 
 packages/api-client
 .env
+playwright/.auth/
+playwright-report/
+test-results/
