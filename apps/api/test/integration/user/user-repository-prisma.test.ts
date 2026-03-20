@@ -258,7 +258,7 @@ describe('UserRepositoryPrisma Integration Tests', () => {
     it('should persist role changes and dispatch event', async () => {
       // Arrange
       const updatedAt = dayjs();
-      user.addRoles(updatedAt, [UserRoles.VerifiedUser]);
+      user.updateRoles(updatedAt, [UserRoles.VerifiedUser]);
 
       // Act
       await repository.persist(user);

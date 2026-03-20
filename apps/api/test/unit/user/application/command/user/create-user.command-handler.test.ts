@@ -5,6 +5,7 @@ import { CreateUserCommand } from '~/user/application/command/user/create-user.c
 import { LoggedInUserProvider } from '~/common/infrastructure/security/provider/logged-in-user.provider';
 import { LoggedInUser } from '~/common/domain/logged-in-user';
 import { UserRoles } from '~/common/domain/enum/user-roles';
+import { Id } from '~/common/domain/model/value-object/id';
 
 describe('CreateUserCommandHandler', () => {
   let handler: CreateUserCommandHandler;
@@ -36,13 +37,20 @@ describe('CreateUserCommandHandler', () => {
 
       await handler.execute(command);
 
-      expect(createService.invoke).toHaveBeenCalledWith(actor, id, email, password, [], true);
+      expect(createService.invoke).toHaveBeenCalledWith(
+        actor,
+        expect.objectContaining({ value: id }),
+        expect.objectContaining({ value: email }),
+        password,
+        [],
+        true,
+      );
     });
 
     test('it generates random UUID password when password is not provided', async () => {
       const id = randomUUID();
       const email = 'test@rawstack.io';
-      const actor = new LoggedInUser('admin-id', [UserRoles.Admin]);
+      const actor = new LoggedInUser(new Id(randomUUID()), [UserRoles.Admin]);
 
       actorProvider.getLoggedInUser.mockReturnValue(actor);
 
@@ -52,8 +60,8 @@ describe('CreateUserCommandHandler', () => {
 
       expect(createService.invoke).toHaveBeenCalledWith(
         actor,
-        id,
-        email,
+        expect.objectContaining({ value: id }),
+        expect.objectContaining({ value: email }),
         expect.any(String), // The generated UUID password
         [],
         false, // passwordWasProvided = false

@@ -40,7 +40,7 @@ export function PasswordForm({ onSuccess }: Props) {
     register,
     handleSubmit,
     formState: { errors, isValid, isSubmitting },
-  } = useForm<Inputs>({ resolver: zodResolver(schema) });
+  } = useForm<Inputs>({ resolver: zodResolver(schema), mode: 'onChange' });
 
   const onSubmit: SubmitHandler<Inputs> = async (data) => {
     updatedPassword(data);

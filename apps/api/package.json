@@ -1,6 +1,6 @@
 {
   "name": "rawstack-api-core",
-  "version": "v0.1.0-alpha.7",
+  "version": "v0.1.0-alpha.8",
   "description": "RawStack core API (NestJS + Prisma). Open-source, self-hosted foundation for the RawStack suite.",
   "keywords": [
     "rawstack",
@@ -36,6 +36,7 @@
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
+    "start:test": "dotenv -e .env.e2e -- sh -c 'npx prisma migrate deploy && npx ts-node prisma/seed.ts && nest start'",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "jest",
     "test:watch": "jest --watch",
@@ -80,6 +81,7 @@
     "@types/supertest": "^6.0.2",
     "@typescript-eslint/eslint-plugin": "^8.20.0",
     "@typescript-eslint/parser": "^8.20.0",
+    "dotenv-cli": "^11.0.0",
     "eslint": "^9.18.0",
     "eslint-config-prettier": "^10.0.1",
     "eslint-plugin-prettier": "^5.2.1",

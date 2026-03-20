@@ -1,5 +1,5 @@
 module.exports = {
-  testMatch: ['**/test/**/*.test.ts'],
+  testMatch: ['<rootDir>/test/unit/**/*.test.ts'],
   transform: {
     '^.+\\.(t|j)s$': 'ts-jest',
   },
@@ -9,4 +9,5 @@ module.exports = {
   moduleNameMapper: {
     '^~/(.*)$': '<rootDir>/src/$1',
   },
+  watchman: false,
 };

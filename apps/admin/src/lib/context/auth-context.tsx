@@ -44,6 +44,15 @@ const AuthProvider = ({ children }: Props) => {
 
   let isMounting = false;
 
+  const isAccessTokenValid = (accessToken: string): boolean => {
+    try {
+      const payload = JSON.parse(atob(accessToken.split('.')[1]));
+      return payload.exp * 1000 > Date.now();
+    } catch {
+      return false;
+    }
+  };
+
   useEffect(() => {
     const loadUserFromLocalStorage = async () => {
       if (!user && !isMounting) {
@@ -51,10 +60,37 @@ const AuthProvider = ({ children }: Props) => {
         const authData = await getAuthItems();
 
         if (authData && authData.userEmail && authData.refreshToken) {
-          await login({
-            email: authData.userEmail,
-            refreshToken: authData.refreshToken,
-          });
+          if (authData.accessToken && isAccessTokenValid(authData.accessToken)) {
+            Api.init(
+              authData.accessToken,
+              {
+                token: authData.refreshToken,
+                expiresAt: dayjs(authData.expiresAt).toDate().getTime(),
+                email: authData.userEmail,
+              },
+              (accessToken?: string, data?: refreshData) => {
+                if (data) {
+                  LocalStorageProvider.setData('authData', {
+                    accessToken,
+                    expiresAt: dayjs(data.expiresAt).toISOString(),
+                    refreshToken: data.token,
+                    userEmail: data.email,
+                  });
+                }
+              },
+            );
+            const fetchedUser = await fetchUser();
+            if (fetchedUser.isAdmin) {
+              setUser(fetchedUser);
+            } else {
+              await storeAuthItems();
+            }
+          } else {
+            await login({
+              email: authData.userEmail,
+              refreshToken: authData.refreshToken,
+            });
+          }
         }
 
         isMounting = false;

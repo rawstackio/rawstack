@@ -1,13 +1,18 @@
 {
   "name": "rawstack-app",
-  "version": "v0.1.0-alpha.7",
+  "version": "v0.1.0-alpha.8",
+  "description": "RawStack mobile app (React Native).",
+  "author": "Dan Byrne",
+  "license": "MIT",
   "private": true,
   "scripts": {
     "android": "react-native run-android",
     "ios": "react-native run-ios",
     "lint": "eslint .",
     "start": "react-native start",
-    "test": "jest"
+    "test": "jest",
+    "test:watch": "jest --watchAll",
+    "test:coverage": "jest --coverage"
   },
   "dependencies": {
     "@rawstack/api-client": "file:./packages/api-client",

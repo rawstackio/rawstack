@@ -47,7 +47,7 @@ export function SiteHeader({ title }: Props) {
           </BreadcrumbList>
         </Breadcrumb>
         <div className="ml-auto flex items-center gap-2">
-          <Button variant="ghost" size="sm" className="hidden sm:flex" onClick={toggleTheme}>
+          <Button variant="ghost" size="sm" className="hidden sm:flex" onClick={toggleTheme} aria-label={theme === 'Dark' ? 'moon' : 'sun'}>
             {theme === 'Dark' ? <MoonIcon /> : <SunIcon />}
           </Button>
         </div>

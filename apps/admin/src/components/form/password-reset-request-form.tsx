@@ -11,13 +11,13 @@ import { Error } from '@/components/form/error';
 import { useCreatePasswordResetRequest } from '@/hooks/password/use-create-password-reset-request.ts';
 
 const schema = z.object({
-  email: z.string().email(),
+  email: z.string().min(1, 'Email is required').email('Invalid email address'),
 });
 type Inputs = z.TypeOf<typeof schema>;
 
 export function PasswordResetRequestForm({ className, ...props }: ComponentProps<'div'>) {
   const { createPasswordResetRequest } = useCreatePasswordResetRequest({
-    onSuccess: (email: string) => toast.success(`A password reset link has been sent to ${email}`),
+    onSuccess: (data) => toast.success(`A password reset link has been sent to ${data?.email}`),
     onError,
   });
 
@@ -25,7 +25,7 @@ export function PasswordResetRequestForm({ className, ...props }: ComponentProps
     register,
     handleSubmit,
     formState: { errors, isValid, isSubmitting },
-  } = useForm<Inputs>({ resolver: zodResolver(schema) });
+  } = useForm<Inputs>({ resolver: zodResolver(schema), mode: 'onChange' });
 
   const onSubmit: SubmitHandler<Inputs> = async (data) => {
     createPasswordResetRequest(data);

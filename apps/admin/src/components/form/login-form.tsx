@@ -10,7 +10,7 @@ import { useAuth } from '@/lib/context/auth-context.tsx';
 import { Error } from '@/components/form/error.tsx';
 
 const schema = z.object({
-  email: z.string().email('Invalid email address').min(1, 'Email is required'),
+  email: z.string().min(1, 'Email is required').email('Invalid email address'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
 });
 
@@ -22,7 +22,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'div'>) 
     register,
     handleSubmit,
     formState: { errors, isValid, isSubmitting },
-  } = useForm<Inputs>({ resolver: zodResolver(schema) });
+  } = useForm<Inputs>({ resolver: zodResolver(schema), mode: 'onChange' });
 
   const onSubmit: SubmitHandler<Inputs> = async (data) => {
     try {
