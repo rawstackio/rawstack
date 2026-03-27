@@ -1,9 +1,12 @@
 {
   "name": "rawstack-notification-service",
-  "version": "v0.1.0-alpha.8",
+  "version": "v0.1.0-beta.1",
   "description": "RawStack notification microservice (email + SMS).",
   "author": "Dan Byrne",
   "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
   "bin": {
     "app-runner": "aws/bin/notification.js"
   },

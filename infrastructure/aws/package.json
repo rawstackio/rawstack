@@ -1,9 +1,12 @@
 {
   "name": "rawstack-infrastructure",
-  "version": "v0.1.0-alpha.8",
+  "version": "v0.1.0-beta.1",
   "description": "Unified CDK infrastructure for RawStack",
   "author": "Dan Byrne",
   "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
   "bin": {
     "app": "bin/app.js"
   },

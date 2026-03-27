@@ -1,10 +1,13 @@
 {
   "name": "rawstack-web",
-  "version": "v0.1.0-alpha.8",
+  "version": "v0.1.0-beta.1",
   "description": "RawStack public website (Next.js).",
   "author": "Dan Byrne",
   "license": "MIT",
   "private": true,
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",

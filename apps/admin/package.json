@@ -1,11 +1,14 @@
 {
   "name": "rawstack-admin",
-  "version": "v0.1.0-alpha.8",
+  "version": "v0.1.0-beta.1",
   "description": "RawStack admin dashboard (React + Vite).",
   "author": "Dan Byrne",
   "license": "MIT",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
