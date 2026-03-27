@@ -1,6 +1,6 @@
 {
   "name": "rawstack-api-core",
-  "version": "v0.1.0-alpha.8",
+  "version": "v0.1.0-beta.1",
   "description": "RawStack core API (NestJS + Prisma). Open-source, self-hosted foundation for the RawStack suite.",
   "keywords": [
     "rawstack",
@@ -26,7 +26,7 @@
     "url": "https://rawstack.io"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "scripts": {
     "build": "nest build",
