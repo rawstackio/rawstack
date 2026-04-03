@@ -23,6 +23,7 @@ import Picker, { PickerItem } from '../components/Picker/Picker';
 import Logout from '../components/Icon/Items/Logout';
 import ThemeAwareText from '../components/Text/Text';
 import { useUpdateUserEmail } from '../hooks/user/use-update-user-email.ts';
+import EmailVerificationNotification from '../components/Notification/EmailVerificationNotification.tsx';
 
 const SettingsScreen = () => {
   const { user, logout, refreshUser } = useAuth();
@@ -31,52 +32,6 @@ const SettingsScreen = () => {
   const [edit, setEdit] = useState<undefined | 'email' | 'password'>(undefined);
   const navigation = useNavigation();
   const phoneTheme = useColorScheme();
-
-  const { setModalConfig, closeModal, setActionButtonBusy } = useApp();
-
-  const { updateUserEmail, isBusy } = useUpdateUserEmail({
-    onSuccess: () => {
-      initialEmailVerificationScreen();
-    },
-  });
-
-  // Here’s our resend handler,
-  // defined in the main component scope rather than inline
-  const handleResendVerification = async () => {
-    if (!user) {
-      return;
-    }
-
-    setActionButtonBusy(isBusy);
-
-    updateUserEmail({ userId: user.id, email: user.unverifiedEmail! });
-  };
-
-  const onUserNotificationPress = () => {
-    setModalConfig({
-      title: 'Unverified Email',
-      content:
-        'Your email is not yet verified! Check your email for the verification link or resend the verification link',
-      confirmButton: {
-        label: 'Resend',
-        onPress: handleResendVerification,
-      },
-    });
-  };
-
-  const initialEmailVerificationScreen = () => {
-    setModalConfig({
-      title: 'Email verification token sent',
-      content: 'Please check your email for the verification link',
-      confirmButton: {
-        label: 'Ok',
-        onPress: async () => {
-          setActionButtonBusy(false);
-          closeModal();
-        },
-      },
-    });
-  };
 
   useEffect(() => {
     refreshUser();
@@ -126,14 +81,7 @@ const SettingsScreen = () => {
       <Content>
         <Section>
           <SectionHeading>Account</SectionHeading>
-          {user?.unverifiedEmail && (
-            <UnverifiedWrapper onPress={onUserNotificationPress}>
-              <ThemeAwareText>{`Your email "${user?.unverifiedEmail}" is unverified!`}</ThemeAwareText>
-              {!user.isVerified && (
-                <ThemeAwareText>Some features may be restricted until you are verified</ThemeAwareText>
-              )}
-            </UnverifiedWrapper>
-          )}
+          {user?.unverifiedEmail && <EmailVerificationNotification />}
           <SettingsRow label={'Email'} top={true} onPress={accountSettings} icon={Mail}>
             <ThemeAwareText>{user?.email}</ThemeAwareText>
           </SettingsRow>
@@ -191,11 +139,6 @@ const SettingsRowRight = styled.View`
   flex-direction: row;
   align-items: center;
   position: relative;
-`;
-
-const UnverifiedWrapper = styled.Pressable`
-  background: ${p => p.theme.primary};
-  padding: ${theme.layout.spacing * 0.33}px ${theme.layout.spacing}px;
 `;
 
 const Arrow = styled(Icon)`

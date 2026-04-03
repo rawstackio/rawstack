@@ -43,7 +43,8 @@
     "test:cov": "jest --coverage",
     "test:e2e": "jest test/e2e --config jest-e2e.config.js",
     "test:unit": "jest test/unit --config jest.config.js",
-    "test:integration": "jest test/integration --config jest-integration.config.js"
+    "test:integration": "jest test/integration --config jest-integration.config.js",
+    "rawstack": "ts-node -r tsconfig-paths/register src/cli.ts"
   },
   "dependencies": {
     "@aws-sdk/client-eventbridge": "^3.971.0",
@@ -57,6 +58,7 @@
     "@prisma/adapter-pg": "^7.2.0",
     "@prisma/client": "7.2.0",
     "argon2": "^0.44.0",
+    "commander": "^14.0.3",
     "dayjs": "^1.11.19",
     "ioredis": "^5.9.2",
     "nest-commander": "^3.20.1",
