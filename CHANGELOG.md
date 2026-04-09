@@ -6,6 +6,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [v0.1.0-beta.1] - 2026-04-09
+### 🚀 Overview
+This is the **first beta release** of the RawStack platform, introducing **CLI infrastructure improvements** in the API, **dependency updates**, **design token enhancements**, and **app refactoring** for better modularity and user experience.
+
+The focus of this release is establishing a robust CLI architecture for the API, improving theming flexibility across applications, and enhancing code maintainability through refactoring.
+
+### ✨ Added
+- **CLI Infrastructure** (`apps/api`)
+    - New CLI entrypoint (`rawstack` script) using `nest-commander`
+    - Added `commander` dependency for CLI support
+    - Implemented `CliModule` with necessary imports and providers for structured CLI commands
+- **Abstract `BaseCommandRunner` class** (`apps/api`)
+    - Provides consistent context (`requestId`, `actor`) for CLI command runners
+    - Standardized error handling and improved code reuse across CLI commands
+- **Brand color design tokens** (`apps/admin`, `apps/web`)
+    - New CSS variables for primary/secondary brand colors and their foregrounds
+    - Support for both light and dark themes
+    - Improved design consistency and theming flexibility
+
+### ♻️ Refactored
+- **`CreateUserCommand`** (`apps/api`)
+    - Extended from `BaseCommandRunner` and moved logic from `run` to `execute`
+    - Aligned with the new CLI architecture patterns
+- **Email verification notification** (`apps/app`)
+    - Extracted into a reusable `EmailVerificationNotification` component
+    - Simplified logic in `SettingsScreen` for improved maintainability
+
+### ⬆️ Updated
+- **Dependency upgrades** (`apps/admin`)
+    - `lucide-react`, `zod`, `@types/node`, `@vitejs/plugin-react`, `jsdom`, `typescript`, `vite`
+    - Ensures compatibility and access to new features and fixes
+
+### 🧱 Scope
+Included in this release:
+- `apps/api` — RawStack API Core (CLI infrastructure)
+- `apps/admin` — Admin Dashboard (dependency updates, theming)
+- `apps/web` — Public Website (theming)
+- `apps/app` — RawStack Mobile App (email verification refactor)
+- `infrastructure/aws` — AWS CDK infrastructure
+- `services/notification` — Notification Microservice
+
+### ⚙️ Notes
+This is the **first beta release**, marking a transition from alpha to a more stable API surface.
+The new CLI infrastructure establishes patterns for administrative commands that will be expanded in future releases. Design token improvements provide a foundation for consistent theming across all applications.
+
+For setup instructions, see:
+- `apps/api/README.md`
+- `apps/admin/README.md`
+- `apps/app/README.md`
+
 ## [v0.1.0-alpha.8] - 2026-03-20
 ### 🚀 Overview
 This alpha introduces **end-to-end (E2E) testing infrastructure** using **Playwright** for the Admin Dashboard and Public Website, along with significant **accessibility**, **form validation**, and **user experience** improvements.
