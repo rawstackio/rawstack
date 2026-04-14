@@ -15,7 +15,7 @@
     "strict": true,
     "paths": {
       "~/*": ["src/*"],
-      "@prisma/client": ["./prisma/generated/client"]
+      "@generated/prisma": ["./prisma/generated/client"]
     }
   }
 }

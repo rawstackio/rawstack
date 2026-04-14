@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import * as dayjs from 'dayjs';
-import { Prisma, Roles, User } from '@prisma/client';
+import { Prisma, Roles, User } from '@generated/prisma';
 import { PrismaClientKnownRequestError } from '@prisma/client-runtime-utils';
 import { UserRepositoryInterface } from '~/user/domain/model/user/user-repository.interface';
 import { UserModel } from '~/user/domain/model/user/user.model';

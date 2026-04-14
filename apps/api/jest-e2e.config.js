@@ -8,6 +8,7 @@ module.exports = {
   testEnvironment: 'node',
   moduleNameMapper: {
     '^~/(.*)$': '<rootDir>/src/$1',
+    '^@generated/prisma$': '<rootDir>/prisma/generated/client',
   },
   globalSetup: '<rootDir>/test/setup.ts',
   globalTeardown: '<rootDir>/test/teardown.ts',
