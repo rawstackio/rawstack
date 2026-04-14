@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { Prisma, Roles, Token } from '@prisma/client';
+import { Prisma, Roles, Token } from '@generated/prisma';
 import * as dayjs from 'dayjs';
 import { TokenRepositoryInterface } from '~/auth/domain/model/token/token-repository.interface';
 import { TokenModel } from '~/auth/domain/model/token/token.model';
