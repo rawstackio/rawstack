@@ -6,6 +6,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [v0.1.0-beta.2] - 2026-04-14
+### 🐛 Fixed
+- **Prisma client module resolution** (`apps/api`)
+    - Updated Prisma client imports to use `@generated/prisma` custom module path
+    - Added Jest `moduleNameMapper` configuration for test compatibility
+    - Updated TypeScript path mappings in `tsconfig.json`
+
+---
+
 ## [v0.1.0-beta.1] - 2026-04-09
 ### 🚀 Overview
 This is the **first beta release** of the RawStack platform, introducing **CLI infrastructure improvements** in the API, **dependency updates**, **design token enhancements**, and **app refactoring** for better modularity and user experience.
