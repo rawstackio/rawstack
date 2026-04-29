@@ -9,11 +9,12 @@ export type refreshData = {
   email: string;
 };
 
-class Api {
+export class Api {
   public auth!: AuthenticationApi;
   public user!: UserApi;
 
   private readonly axiosInstance: AxiosInstance;
+  private readonly _basePath: string;
   private _accessToken?: string = undefined;
   private _refreshData?: refreshData = undefined;
   public onRefreshDataUpdated?: (accessToken?: string, data?: refreshData) => void;
@@ -22,7 +23,8 @@ class Api {
     return Promise.reject(error);
   };
 
-  constructor() {
+  constructor(basePath?: string) {
+    this._basePath = basePath ?? process.env.NEXT_PUBLIC_API_URL ?? '';
     this.axiosInstance = axios.create();
 
     this.axiosInstance.interceptors.request.use(this.preAuthorizeRequest, this.onRequestError);
@@ -64,7 +66,7 @@ class Api {
 
   protected setUpApis() {
     const configuration = new Configuration({
-      basePath: process.env.NEXT_PUBLIC_API_URL ?? '',
+      basePath: this._basePath,
       accessToken: this._accessToken,
     });
 
@@ -79,6 +81,55 @@ class Api {
 
   set refreshData(data: refreshData) {
     this._refreshData = data;
+  }
+
+  get currentAccessToken(): string | undefined {
+    return this._accessToken;
+  }
+
+  get needsRefresh(): boolean {
+    if (!this._refreshData || !this._accessToken) return false;
+    return this._refreshData.expiresAt - Date.now() < 30_000;
+  }
+
+  // Explicitly refresh the token pair and persist via onRefreshDataUpdated.
+  // Returns the new access token, or null if the refresh token is invalid/revoked.
+  async forceRefresh(): Promise<string | null> {
+    if (!this._refreshData) return null;
+    const release = await this.mutex.acquire();
+    try {
+      const { data } = await this.auth.createToken({
+        refreshToken: this._refreshData.token,
+        email: this._refreshData.email,
+      });
+      if ('accessToken' in data.item) {
+        const accessToken = data.item.accessToken;
+        const newRefreshData: refreshData = {
+          token: data.item.refreshToken,
+          expiresAt: new Date(data.item.expiresAt).getTime(),
+          email: this._refreshData.email,
+        };
+        this.refreshData = newRefreshData;
+        this.accessToken = accessToken;
+        this.onRefreshDataUpdated?.(accessToken, newRefreshData);
+        return accessToken;
+      }
+      return null;
+    } catch {
+      this._accessToken = undefined;
+      this._refreshData = undefined;
+      this.onRefreshDataUpdated?.(undefined, undefined);
+      return null;
+    } finally {
+      release();
+    }
+  }
+
+  // Clears the session (e.g. when the backend revokes the token).
+  async clearSession(): Promise<void> {
+    this._accessToken = undefined;
+    this._refreshData = undefined;
+    this.onRefreshDataUpdated?.(undefined, undefined);
   }
 
   private mutex = withTimeout(new Mutex(), 12000);
@@ -138,4 +189,14 @@ class Api {
   };
 }
 
-export default new Api();
+// Prevents the singleton from accidentally carrying an access token.
+// Any call to `DefaultApi.accessToken = x` is silently ignored — the request
+// goes out without an Authorization header and receives a natural 401.
+// Use a fresh `new Api()` instance for authenticated server-side calls instead.
+class UnauthenticatedApi extends Api {
+  override set accessToken(_: string | undefined) {}
+}
+
+// Default client for unauthenticated calls (login, register, password reset) — calls backend directly.
+export default new UnauthenticatedApi();
+

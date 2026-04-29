@@ -17,6 +17,9 @@ describe('AuthPageWrapper', () => {
       push: mockPush,
       replace: vi.fn(),
       prefetch: vi.fn(),
+      back: vi.fn(),
+      forward: vi.fn(),
+      refresh: vi.fn(),
     } as ReturnType<typeof useRouter>)
   })
 
@@ -29,7 +32,6 @@ describe('AuthPageWrapper', () => {
       openAuthModal: vi.fn(),
       closeAuthModal: vi.fn(),
       refreshUser: vi.fn(),
-      getAuthItems: vi.fn(),
     })
 
     render(
@@ -50,7 +52,6 @@ describe('AuthPageWrapper', () => {
       openAuthModal: vi.fn(),
       closeAuthModal: vi.fn(),
       refreshUser: vi.fn(),
-      getAuthItems: vi.fn(),
     })
 
     render(
@@ -73,7 +74,6 @@ describe('AuthPageWrapper', () => {
       openAuthModal: vi.fn(),
       closeAuthModal: vi.fn(),
       refreshUser: vi.fn(),
-      getAuthItems: vi.fn(),
     })
 
     render(
@@ -96,7 +96,6 @@ describe('AuthPageWrapper', () => {
       openAuthModal: vi.fn(),
       closeAuthModal: vi.fn(),
       refreshUser: vi.fn(),
-      getAuthItems: vi.fn(),
     })
 
     render(

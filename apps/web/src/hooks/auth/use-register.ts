@@ -1,6 +1,6 @@
+import { register } from '@/actions/auth';
 import { useAuth } from '@/lib/context/auth-context';
-import Api from '@/lib/api/Api';
-import UserModel from '@/lib/model/UserModel';
+import UserModel from '@/lib/model/user-model';
 import { useMutationWithCallbacks, type UseMutationWithCallbacksOptions } from '@/hooks/use-mutation-with-callbacks';
 
 interface RegisterParams {
@@ -9,18 +9,12 @@ interface RegisterParams {
 }
 
 export function useRegister(options?: UseMutationWithCallbacksOptions<RegisterParams>) {
-  const { login } = useAuth();
+  const { refreshUser } = useAuth();
 
   const { mutate, isPending } = useMutationWithCallbacks(async (data: RegisterParams) => {
-    const response = await Api.user.createUser({
-      email: data.email.toLowerCase(),
-      password: data.password,
-    });
-
-    const user = UserModel.createFromApiUser(response.data.item);
-    await login({ email: data.email, password: data.password }, user);
-
-    return user;
+    const user = await register(data.email, data.password);
+    await refreshUser();
+    return UserModel.createFromApiUser(user);
   }, options);
 
   return { register: mutate, isBusy: isPending };

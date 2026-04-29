@@ -1,4 +1,4 @@
-import Api from '@/lib/api/Api';
+import { updateUser } from '@/actions/user';
 import { useMutationWithCallbacks, type UseMutationWithCallbacksOptions } from '@/hooks/use-mutation-with-callbacks';
 
 interface UpdateAccountParams {
@@ -9,11 +9,17 @@ interface UpdateAccountParams {
 
 export function useUpdateAccount(options?: UseMutationWithCallbacksOptions<UpdateAccountParams>) {
   const { mutate, isPending } = useMutationWithCallbacks(
-    (data: UpdateAccountParams) =>
-      Api.user.updateUser(data.userId, {
+    async (data: UpdateAccountParams) => {
+      const result = await updateUser(data.userId, {
         email: data.email,
         password: data.password || undefined,
-      }),
+      });
+      if (!result.ok) {
+        const err = Object.assign(new Error(result.error.message), { statusCode: result.error.statusCode });
+        throw err;
+      }
+      return result.user;
+    },
     options,
   );
 

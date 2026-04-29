@@ -1,5 +1,5 @@
 import { useAuth } from '@/lib/context/auth-context';
-import Api from '@/lib/api/Api';
+import { updateUser } from '@/actions/user';
 import { useMutationWithCallbacks, type UseMutationWithCallbacksOptions } from '@/hooks/use-mutation-with-callbacks';
 
 interface UpdatePasswordParams {
@@ -13,9 +13,7 @@ export function useUpdatePassword(options?: UseMutationWithCallbacksOptions<Upda
     if (!user) {
       return Promise.reject(new Error('User not authenticated'));
     }
-    return Api.user.updateUser(user.id, {
-      password: data.password,
-    });
+    return updateUser(user.id, { password: data.password });
   }, options);
 
   return { updatePassword: mutate, isBusy: isPending };

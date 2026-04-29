@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import UserModel from './UserModel';
+import UserModel from './user-model';
 import { User } from '@rawstack/api-client';
 
 describe('UserModel', () => {

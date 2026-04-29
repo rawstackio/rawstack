@@ -4,6 +4,8 @@ import { CreateActionRequestRequest } from '~/auth/infrastructure/controller/act
 import { CreateActionRequestCommand } from '~/auth/application/command/action-request/create-action-request.command';
 import { RequestIdProvider } from '~/common/infrastructure/logging/request-id-provider';
 import { GetActionRequestQuery } from '~/auth/application/query/action-request/get-action-request.query';
+import { ItemResponseDtoInterface } from '~/common/application/query/dto/item-response-dto.interface';
+import { ActionRequestResponseDto } from '~/auth/application/query/action-request/dto/action-request.response-dto';
 
 @Controller('auth')
 export class CreateActionRequestAction {
@@ -15,7 +17,9 @@ export class CreateActionRequestAction {
 
   @Post('action-requests')
   @HttpCode(202)
-  async invoke(@Body() request: CreateActionRequestRequest) {
+  async invoke(
+    @Body() request: CreateActionRequestRequest,
+  ): Promise<ItemResponseDtoInterface<ActionRequestResponseDto>> {
     const requestId = this.requestIdProvider.getRequestId();
 
     const command = new CreateActionRequestCommand(requestId, request.token);

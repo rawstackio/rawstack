@@ -22,6 +22,10 @@ export type appThemeType = 'Dark' | 'Light';
 
 export const AppContext = createContext({} as App);
 
+const applyTheme = (theme: appThemeType) => {
+  document.documentElement.classList.toggle('dark', theme === 'Dark');
+};
+
 const AppProvider = ({ children }: { children: ReactNode }) => {
   const [theme, setThemeState] = useState<appThemeType>('Dark');
   const [drawerOpen, setDrawerOpen] = useState<boolean>(false);
@@ -32,33 +36,22 @@ const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
-    const load = async () => {
-      const savedTheme = await LocalStorageProvider.getString('theme');
+    const savedTheme = LocalStorageProvider.getString('theme');
+    const resolvedTheme: appThemeType = savedTheme === 'Light' ? 'Light' : 'Dark';
 
-      if (savedTheme) {
-        setThemeState(savedTheme as unknown as appThemeType);
-      } else {
-        await LocalStorageProvider.setString('theme', theme as string);
-      }
+    setThemeState(resolvedTheme);
+    applyTheme(resolvedTheme);
 
-      if (savedTheme === 'Light') {
-        document.documentElement.classList.remove('dark');
-      }
-    };
-
-    load();
+    if (!savedTheme) {
+      LocalStorageProvider.setString('theme', resolvedTheme);
+    }
   }, []);
 
-  const setTheme = async (chosen: appThemeType) => {
+  const setTheme = (chosen: appThemeType) => {
     setThemeState(chosen);
 
-    document.documentElement.classList.toggle(
-      'dark',
-      // localStorage.theme === "dark" ||
-      // (!("theme" in localStorage) && window.matchMedia("(prefers-color-scheme: dark)").matches),
-    );
-
-    await LocalStorageProvider.setString('theme', chosen as string);
+    applyTheme(chosen);
+    LocalStorageProvider.setString('theme', chosen);
   };
 
   return (
