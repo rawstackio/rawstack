@@ -6,6 +6,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [v0.1.0-beta.3] - 2026-05-01
+### 🚀 Overview
+This release is headlined by the **migration of the web app to a server-action-based Backend-for-Frontend (BFF) architecture**, introducing secure server-side session management for all authentication flows. Supporting changes include an admin app authentication refactor, theme management improvements, dependency updates, and general codebase maintenance across the monorepo.
+
+### ✨ Added
+- **Server Actions & BFF architecture** (`apps/web`) ⭐
+    - Introduced server-side auth actions (`apps/web/src/actions/auth.ts` and `apps/web/src/actions/user.ts`) using **Next.js Server Actions** as the BFF layer for all API interactions
+    - All authentication flows (login, logout, registration, user fetching, account updates, account deletion) now go through secure server-side actions — the browser never directly calls the API
+    - Integrated **iron-session** for encrypted, cookie-based server-side session storage of access tokens, refresh tokens, and session metadata
+    - Added `SESSION_SECRET` to `.env.dist` for session encryption configuration
+    - Added a `debug` script to the web app for easier local development
+
+### ♻️ Refactored
+- **Web app error handling** (`apps/web`) ⭐
+    - Server actions now return typed discriminated union results (`{ ok: true, ... } | { ok: false, error: { statusCode, type, message } }`) instead of throwing, eliminating the issue of custom error classes losing their prototype during Next.js serialization
+    - Client-side forms and hooks check `result.ok` rather than relying on `instanceof ApiError`, making 409/conflict errors correctly handled in registration and account update flows
+- **Admin app authentication** (`apps/admin`)
+    - Extracted API initialization and token refresh logic into a new `useApiInit` hook, de-duplicating auth logic in `AuthProvider`
+- **Admin app theme management** (`apps/admin`)
+    - Refactored theme persistence and toggling logic
+    - Removed `next-themes` dependency in favour of a simplified custom `AppProvider`
+
+### 🐛 Fixed
+- **Admin app** cookie-based storage provider — cleaned up error handling and removed unnecessary try/catch blocks
+- **API** seed script — fixed Prisma import path for better compatibility
+- **API** controller response types updated for improved type safety and consistency
+
+### ⬆️ Updated
+- **Version bumps** — all major packages (`apps/admin`, `apps/api`, `apps/web`, `packages/api-client`, `apps/app`) bumped to `v0.1.0-beta.3`
+- **TypeScript configs** — added `ignoreDeprecations` to suppress deprecation warnings ahead of TypeScript 6.0
+
+### 🧱 Scope
+Included in this release:
+- `apps/web` — Public Website (server actions BFF, iron-session, error handling)
+- `apps/admin` — Admin Dashboard (auth refactor, theme management)
+- `apps/api` — RawStack API Core (type safety, seed script fix)
+- `packages/api-client` — API Client (version bump)
+- `apps/app` — RawStack Mobile App (version bump)
+
+### ⚙️ Notes
+The server action BFF pattern established in this release is the recommended approach for all future web app API interactions. The `SESSION_SECRET` environment variable must be set before running the web app — see `apps/web/README.md` for setup instructions.
+
+---
+
 ## [v0.1.0-beta.2] - 2026-04-14
 ### 🐛 Fixed
 - **Prisma client module resolution** (`apps/api`)

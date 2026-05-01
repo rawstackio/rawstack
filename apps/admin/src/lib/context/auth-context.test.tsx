@@ -22,12 +22,12 @@ vi.mock('../storage/local-storage.ts', () => ({
   },
 }))
 
-const mockApi = Api as {
+const mockApi = Api as unknown as {
   auth: { createToken: ReturnType<typeof vi.fn> }
   user: { getCurrentUser: ReturnType<typeof vi.fn> }
   init: ReturnType<typeof vi.fn>
 }
-const mockStorage = LocalStorageProvider as {
+const mockStorage = LocalStorageProvider as unknown as {
   getData: ReturnType<typeof vi.fn>
   setData: ReturnType<typeof vi.fn>
 }

@@ -1,5 +1,12 @@
 import { User } from '@rawstack/api-client';
 
+export type UserDTO = {
+  id: string;
+  email: string;
+  roles: string[];
+  unverifiedEmail: string | undefined;
+};
+
 export default class UserModel {
   constructor(
     public readonly id: string,

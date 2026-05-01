@@ -13,9 +13,21 @@ import Link from 'next/link';
 import Logout from '@/components/icon/items/logout';
 import Settings from '@/components/icon/items/settings';
 import { useAuth } from '@/lib/context/auth-context';
+import { usePathname, useRouter } from 'next/navigation';
+
+const PROTECTED_ROUTES = ['/account'];
 
 export function AccountDropdownMenu() {
   const { logout } = useAuth();
+  const pathname = usePathname();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    await logout();
+    if (PROTECTED_ROUTES.some((route) => pathname.startsWith(route))) {
+      router.replace('/');
+    }
+  };
 
   return (
     <DropdownMenu>
@@ -30,7 +42,7 @@ export function AccountDropdownMenu() {
             <Settings /> Settings
           </Link>
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={logout}>
+        <DropdownMenuItem onClick={handleLogout}>
           <Logout /> Logout
         </DropdownMenuItem>
       </DropdownMenuContent>

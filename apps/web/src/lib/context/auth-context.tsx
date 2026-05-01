@@ -1,39 +1,24 @@
 'use client';
 
 import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
-import dayjs from 'dayjs';
-import UserModel from '../model/UserModel';
+import UserModel from '../model/user-model';
+import { type User } from '@rawstack/api-client';
 import { ApiError, AuthenticationError } from '../api/exception/errors';
-import LocalStorageProvider from '../storage/localStorage';
-import Api, { refreshData } from '../api/Api';
+import { login, autoLogin, logout as logoutAction, getMe } from '@/actions/auth';
 
 interface Auth {
   user?: UserModel;
-  login: (credentials: UserCredentials, user?: UserModel) => Promise<void>;
-  logout: () => void;
+  login: (credentials: UserCredentials) => Promise<void>;
+  logout: () => Promise<void>;
   authModalIsOpen: boolean;
   openAuthModal: () => void;
   closeAuthModal: () => void;
   refreshUser: () => Promise<void>;
-  getAuthItems: () => Promise<AuthData | undefined>;
 }
 
 export type UserCredentials =
-  | {
-      email: string;
-      password: string;
-    }
-  | {
-      email: string;
-      refreshToken: string;
-    };
-
-export type AuthData = {
-  accessToken: string;
-  expiresAt: string;
-  refreshToken: string;
-  userEmail: string;
-};
+  | { email: string; password: string }
+  | { email: string; refreshToken: string };
 
 export const AuthContext = createContext({} as Auth);
 
@@ -42,153 +27,49 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [authModalIsOpen, setAuthModalIsOpen] = useState<boolean>(true);
 
   useEffect(() => {
-    const loadUserFromLocalStorage = async () => {
-      const authData = await getAuthItems();
+    getMe()
+      .then((u) => { if (u) setUser(UserModel.createFromApiUser(u)); })
+      .catch(() => {});
+  }, []);
 
-      if (!user) {
-        if (authData && authData.userEmail && authData.refreshToken) {
-          await login({
-            email: authData.userEmail.toLowerCase(),
-            refreshToken: authData.refreshToken,
-          });
-        }
-      } else {
-        if (authData) {
-          Api.init(
-            authData.accessToken,
-            {
-              token: authData.refreshToken,
-              expiresAt: dayjs(authData.expiresAt).valueOf(),
-              email: authData.userEmail,
-            },
-            storeCallback,
-          );
-        }
-      }
-    };
+  const openAuthModal = () => setAuthModalIsOpen(true);
+  const closeAuthModal = () => setAuthModalIsOpen(false);
 
-    loadUserFromLocalStorage();
-  });
-
-  const openAuthModal = () => {
-    setAuthModalIsOpen(true);
-  };
-
-  const closeAuthModal = () => {
-    setAuthModalIsOpen(false);
-  };
-
-  const storeCallback = async (accessToken?: string, data?: refreshData) => {
-    if (data) {
-      LocalStorageProvider.setData('authData', {
-        accessToken,
-        expiresAt: dayjs(data.expiresAt).toISOString(),
-        refreshToken: data.token,
-        userEmail: data.email.toLowerCase(),
-      });
-    }
-  };
-
-  const login = async (credentials: UserCredentials, user?: UserModel) => {
-    // get the tokens from the api
-    const tokens = await fetchTokens({
-      ...credentials,
-      email: credentials.email.toLowerCase(),
-    });
-
-    Api.init(
-      tokens.accessToken,
-      {
-        token: tokens.refreshToken,
-        expiresAt: dayjs(tokens.expiresAt).valueOf(),
-        email: credentials.email,
-      },
-      storeCallback,
-    );
-
-    if (!user) {
-      user = await fetchUser();
-    }
-    setUser(user);
-  };
-
-  const logout = async () => {
-    await storeAuthItems();
-    Api.init(undefined, undefined, undefined);
-  };
-
-  const fetchTokens = async (credentials: UserCredentials): Promise<AuthData> => {
-    const requestBody =
-      'password' in credentials
-        ? {
-            email: credentials.email.toLowerCase(),
-            password: credentials?.password,
-          }
-        : {
-            email: credentials.email.toLowerCase(),
-            refreshToken: credentials.refreshToken,
-          };
-
+  const handleLogin = async (credentials: UserCredentials) => {
     try {
-      const response = await Api.auth.createToken(requestBody);
-
-      if ('accessToken' in response.data.item) {
-        return {
-          accessToken: response.data.item.accessToken,
-          expiresAt: response.data.item.expiresAt,
-          refreshToken: response.data.item.refreshToken,
-          userEmail: credentials.email,
-        };
-      } else {
-        throw new AuthenticationError('Could not fetch tokens', 'INVALID_CREDENTIALS');
+      const u: User =
+        'refreshToken' in credentials
+          ? await autoLogin(credentials.email, credentials.refreshToken)
+          : await login(credentials.email, credentials.password);
+      setUser(UserModel.createFromApiUser(u));
+    } catch (err) {
+      if (err instanceof ApiError && err.statusCode === 401) {
+        throw new AuthenticationError(err.message, 'INVALID_CREDENTIALS');
       }
-    } catch (e: unknown) {
-      const isRefresh = 'refreshToken' in credentials;
-      if (isRefresh) {
-        await storeAuthItems();
-      }
-      if (e instanceof ApiError && e.statusCode === 401) {
-        throw new AuthenticationError(e.message, 'INVALID_CREDENTIALS');
-      }
-      throw new Error('unknown error');
+      throw err;
     }
+  };
+
+  const handleLogout = async () => {
+    await logoutAction();
+    setUser(undefined);
   };
 
   const refreshUser = async () => {
-    const user = await fetchUser();
-    setUser(user);
-  };
-
-  const fetchUser = async (): Promise<UserModel> => {
-    try {
-      const response = await Api.user.getCurrentUser();
-
-      return UserModel.createFromApiUser(response.data.item);
-    } catch (error: unknown) {
-      throw new AuthenticationError('Could not fetch user', 'USER_NOT_FOUND');
-    }
-  };
-
-  const storeAuthItems = async (user?: UserModel, accessTokens?: AuthData) => {
-    LocalStorageProvider.setData('authData', accessTokens);
-    setUser(user);
-  };
-
-  const getAuthItems = async (): Promise<AuthData | undefined> => {
-    return LocalStorageProvider.getData('authData');
+    const u = await getMe();
+    setUser(u ? UserModel.createFromApiUser(u) : undefined);
   };
 
   return (
     <AuthContext.Provider
       value={{
-        login,
-        logout,
+        login: handleLogin,
+        logout: handleLogout,
         user,
         authModalIsOpen,
         openAuthModal,
         closeAuthModal,
         refreshUser,
-        getAuthItems,
       }}
     >
       {children}

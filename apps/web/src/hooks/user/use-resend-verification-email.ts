@@ -1,4 +1,4 @@
-import Api from '@/lib/api/Api';
+import { updateUser } from '@/actions/user';
 import { useMutationWithCallbacks, type UseMutationWithCallbacksOptions } from '@/hooks/use-mutation-with-callbacks';
 
 interface ResendVerificationEmailParams {
@@ -8,7 +8,7 @@ interface ResendVerificationEmailParams {
 
 export function useResendVerificationEmail(options?: UseMutationWithCallbacksOptions<ResendVerificationEmailParams>) {
   const { mutate, isPending } = useMutationWithCallbacks(
-    (data: ResendVerificationEmailParams) => Api.user.updateUser(data.userId, { email: data.unverifiedEmail }),
+    (data: ResendVerificationEmailParams) => updateUser(data.userId, { email: data.unverifiedEmail }),
     options,
   );
 

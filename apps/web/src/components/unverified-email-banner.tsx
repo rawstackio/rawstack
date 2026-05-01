@@ -3,10 +3,10 @@
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useResendVerificationEmail } from '@/hooks/user/use-resend-verification-email';
-import UserModel from '@/lib/model/UserModel';
+import { type UserDTO } from '@/lib/model/user-model';
 
 type Props = {
-  user: UserModel;
+  user: UserDTO;
 };
 
 export const UnverifiedEmailBanner = ({ user }: Props) => {
@@ -29,9 +29,7 @@ export const UnverifiedEmailBanner = ({ user }: Props) => {
         size="sm"
         className="shrink-0 bg-yellow-700 text-white hover:bg-yellow-800"
         disabled={isBusy}
-        onClick={() =>
-          resendVerificationEmail({ userId: user.id, unverifiedEmail: user.unverifiedEmail! })
-        }
+        onClick={() => resendVerificationEmail({ userId: user.id, unverifiedEmail: user.unverifiedEmail! })}
       >
         Resend email
       </Button>

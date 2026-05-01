@@ -1,4 +1,4 @@
-import Api from '@/lib/api/Api';
+import { deleteUser } from '@/actions/user';
 import { useMutationWithCallbacks, type UseMutationWithCallbacksOptions } from '@/hooks/use-mutation-with-callbacks';
 
 interface DeleteAccountParams {
@@ -7,7 +7,13 @@ interface DeleteAccountParams {
 
 export function useDeleteAccount(options?: UseMutationWithCallbacksOptions<DeleteAccountParams>) {
   const { mutate, isPending } = useMutationWithCallbacks(
-    (data: DeleteAccountParams) => Api.user.deleteUser(data.userId),
+    async (data: DeleteAccountParams) => {
+      const result = await deleteUser(data.userId);
+      if (!result.ok) {
+        const err = Object.assign(new Error(result.error.message), { statusCode: result.error.statusCode });
+        throw err;
+      }
+    },
     options,
   );
 

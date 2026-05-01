@@ -1,4 +1,4 @@
-import { PrismaClient, Roles } from '@generated/prisma';
+import { PrismaClient, Roles } from './generated/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 import * as argon from 'argon2';

@@ -1,6 +1,6 @@
 {
   "name": "rawstack-infrastructure",
-  "version": "v0.1.0-beta.1",
+  "version": "v0.1.0-beta.3",
   "description": "Unified CDK infrastructure for RawStack",
   "author": "Dan Byrne",
   "license": "MIT",

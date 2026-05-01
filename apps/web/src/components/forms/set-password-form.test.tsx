@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SetPasswordForm } from './set-password-form';
 import { useAuth } from '@/lib/context/auth-context';
 import { useRouter } from 'next/navigation';
-import Api from '@/lib/api/Api';
+import * as userActions from '@/actions/user';
 
 // Wrapper component that provides QueryClient for tests
 const createTestWrapper = () => {
@@ -23,12 +23,8 @@ const createTestWrapper = () => {
 // Mock dependencies
 vi.mock('@/lib/context/auth-context');
 vi.mock('next/navigation');
-vi.mock('@/lib/api/Api', () => ({
-  default: {
-    user: {
-      updateUser: vi.fn(),
-    },
-  },
+vi.mock('@/actions/user', () => ({
+  updateUser: vi.fn(),
 }));
 vi.mock('sonner', () => ({
   toast: {
@@ -47,6 +43,9 @@ describe('SetPasswordForm', () => {
       push: mockPush,
       replace: vi.fn(),
       prefetch: vi.fn(),
+      back: vi.fn(),
+      forward: vi.fn(),
+      refresh: vi.fn(),
     } as ReturnType<typeof useRouter>);
     vi.mocked(useAuth).mockReturnValue({
       user: { id: 'user-123', email: 'test@example.com', roles: [], unverifiedEmail: undefined },
@@ -56,9 +55,8 @@ describe('SetPasswordForm', () => {
       openAuthModal: vi.fn(),
       closeAuthModal: vi.fn(),
       refreshUser: vi.fn(),
-      getAuthItems: vi.fn(),
     });
-    Api.user.updateUser = mockUpdateUser;
+    vi.mocked(userActions.updateUser).mockImplementation(mockUpdateUser);
   });
 
   it('should render password input fields', () => {
@@ -106,7 +104,7 @@ describe('SetPasswordForm', () => {
 
   it('should submit form with valid data', async () => {
     const user = userEvent.setup();
-    mockUpdateUser.mockResolvedValue({ data: { success: true } });
+    mockUpdateUser.mockResolvedValue({ id: 'user-123' });
 
     render(<SetPasswordForm />, { wrapper: createTestWrapper() });
 
@@ -137,7 +135,6 @@ describe('SetPasswordForm', () => {
       openAuthModal: vi.fn(),
       closeAuthModal: vi.fn(),
       refreshUser: vi.fn(),
-      getAuthItems: vi.fn(),
     });
 
     const user = userEvent.setup();

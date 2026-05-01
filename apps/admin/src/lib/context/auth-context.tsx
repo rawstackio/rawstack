@@ -1,9 +1,9 @@
 import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 import UserModel from '../model/user-model.ts';
-import dayjs from 'dayjs';
 import { AuthenticationError } from '../api/exception/errors.ts';
 import LocalStorageProvider from '../storage/local-storage.ts';
-import Api, { refreshData } from '../api/api.ts';
+import Api from '../api/api.ts';
+import useApiInit from '../hooks/use-api-init.ts';
 
 interface Props {
   children: ReactNode;
@@ -41,6 +41,7 @@ export const AuthContext = createContext({} as Auth);
 const AuthProvider = ({ children }: Props) => {
   const [loaded, setLoaded] = useState<boolean>(false);
   const [user, setUser] = useState<UserModel | undefined>();
+  const { initApi } = useApiInit();
 
   let isMounting = false;
 
@@ -61,24 +62,12 @@ const AuthProvider = ({ children }: Props) => {
 
         if (authData && authData.userEmail && authData.refreshToken) {
           if (authData.accessToken && isAccessTokenValid(authData.accessToken)) {
-            Api.init(
-              authData.accessToken,
-              {
-                token: authData.refreshToken,
-                expiresAt: dayjs(authData.expiresAt).toDate().getTime(),
-                email: authData.userEmail,
-              },
-              (accessToken?: string, data?: refreshData) => {
-                if (data) {
-                  LocalStorageProvider.setData('authData', {
-                    accessToken,
-                    expiresAt: dayjs(data.expiresAt).toISOString(),
-                    refreshToken: data.token,
-                    userEmail: data.email,
-                  });
-                }
-              },
-            );
+            initApi({
+              accessToken: authData.accessToken,
+              refreshToken: authData.refreshToken,
+              expiresAt: authData.expiresAt,
+              email: authData.userEmail,
+            });
             const fetchedUser = await fetchUser();
             if (fetchedUser.isAdmin) {
               setUser(fetchedUser);
@@ -98,7 +87,7 @@ const AuthProvider = ({ children }: Props) => {
       }
     };
 
-    loadUserFromLocalStorage();
+    void loadUserFromLocalStorage();
   }, [user]);
 
   const login = async (credentials: UserCredentials, user?: UserModel) => {
@@ -143,24 +132,12 @@ const AuthProvider = ({ children }: Props) => {
     const { data, status } = await Api.auth.createToken(requestBody);
 
     if (status === 201 && 'accessToken' in data.item && data.item.accessToken) {
-      Api.init(
-        data.item.accessToken,
-        {
-          token: data.item.refreshToken,
-          expiresAt: dayjs(data.item.expiresAt).toDate().getTime(),
-          email: credentials.email,
-        },
-        (accessToken?: string, data?: refreshData) => {
-          if (data) {
-            LocalStorageProvider.setData('authData', {
-              accessToken,
-              expiresAt: dayjs(data.expiresAt).toISOString(),
-              refreshToken: data.token,
-              userEmail: data.email,
-            });
-          }
-        },
-      );
+      initApi({
+        accessToken: data.item.accessToken,
+        refreshToken: data.item.refreshToken,
+        expiresAt: data.item.expiresAt,
+        email: credentials.email,
+      });
 
       return {
         accessToken: data.item.accessToken,

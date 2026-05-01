@@ -1,4 +1,4 @@
-import Api from '@/lib/api/Api';
+import Api from '@/lib/api/api';
 import { useMutationWithCallbacks, type UseMutationWithCallbacksOptions } from '@/hooks/use-mutation-with-callbacks';
 
 interface PasswordResetRequestParams {

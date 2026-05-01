@@ -5,14 +5,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ComponentProps } from 'react';
-import UserModel from '@/lib/model/UserModel';
+import { type UserDTO } from '@/lib/model/user-model';
+import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { ApiError } from '@/lib/api/exception/errors';
-import { toast } from 'sonner';
 import { useUpdateAccount } from '@/hooks/user/use-update-account';
 import { useDeleteAccount } from '@/hooks/user/use-delete-account';
+import { toast } from 'sonner';
 import { UnverifiedEmailBanner } from '@/components/unverified-email-banner';
 import { useAuth } from '@/lib/context/auth-context';
 import {
@@ -28,7 +28,7 @@ import {
 } from '@/components/ui/alert-dialog';
 
 type Props = {
-  user: UserModel;
+  user: UserDTO;
 } & ComponentProps<'div'>;
 
 const schema = z
@@ -77,6 +77,7 @@ const schema = z
 type Inputs = z.infer<typeof schema>;
 
 export const AccountForm = ({ className, user, ...props }: Props) => {
+  const router = useRouter();
   const { logout } = useAuth();
   const {
     register,
@@ -90,7 +91,7 @@ export const AccountForm = ({ className, user, ...props }: Props) => {
       toast.success('Account updated successfully');
     },
     onError: (error: unknown) => {
-      if (error instanceof ApiError && error.statusCode === 409) {
+      if (error instanceof Error && (error as Error & { statusCode?: number }).statusCode === 409) {
         setError('email', {
           type: 'custom',
           message: 'A user with this email already exists',
@@ -102,9 +103,10 @@ export const AccountForm = ({ className, user, ...props }: Props) => {
   });
 
   const { deleteAccount, isBusy: isDeleting } = useDeleteAccount({
-    onSuccess: () => {
+    onSuccess: async () => {
+      await logout();
+      router.push('/');
       toast.success('Account deleted successfully');
-      logout();
     },
     onError: () => {
       toast.error('Failed to delete account. Try again later!');
