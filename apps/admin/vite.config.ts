@@ -11,4 +11,10 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  server: {
+    watch: {
+      // Vite excludes node_modules by default — re-include the local api-client
+      ignored: ['!**/node_modules/@rawstack/api-client/**'],
+    },
+  },
 })

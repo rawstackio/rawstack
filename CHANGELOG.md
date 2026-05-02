@@ -6,6 +6,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [v0.1.0-beta.4] - 2026-05-07
+### 🚀 Overview
+This release focuses on **hardening authentication security** across the API and Admin Dashboard by migrating refresh token handling to **HttpOnly cookies**, eliminating client-side token storage.
+
+### ✨ Added
+- **HttpOnly cookie-based refresh tokens** (`apps/api`) ⭐
+    - The `/auth/tokens` endpoint now supports an `auth-context: browser` request header, returning the refresh token as a secure HttpOnly cookie instead of in the JSON response body
+    - Added a new `/auth/refresh-token-cookies` endpoint for securely clearing the refresh-token cookie on logout
+    - Added `cookie-parser` and `@types/cookie-parser` dependencies to the API to support cookie-based authentication
+- **Admin logout cookie clearing** (`apps/admin`)
+    - Logout flow now calls `/auth/refresh-token-cookies` to ensure the HttpOnly refresh-token cookie is cleared server-side on logout
+- **Concurrent development workflow** (`apps/admin`)
+    - Added a `dev:full` script for running the admin app concurrently with the local `api-client` package
+    - Improved Vite configuration to support hot-reloading when developing against the local `api-client` package
+
+### ♻️ Refactored
+- **Refresh token storage** (`apps/admin`) ⭐
+    - Removed all references to storing refresh tokens in local storage or any client-accessible storage
+    - Cleaned up related types and token management logic across the frontend for improved security and maintainability
+- **API client package** (`packages/api-client`)
+    - Updated for compatibility with the new cookie-based auth flow and modern module resolution
+    - OpenAPI spec and generated TypeScript client updated to reflect the `auth-context` header and new `/auth/refresh-token-cookies` endpoint
+
+### 🧱 Scope
+Included in this release:
+- `apps/api` — RawStack API Core (HttpOnly cookie auth, cookie-parser, new refresh endpoint)
+- `apps/admin` — Admin Dashboard (cookie-based logout, token storage cleanup, dev workflow)
+- `packages/api-client` — API Client (updated spec and module resolution)
+
+### ⚙️ Notes
+The shift to HttpOnly cookies for refresh tokens is a **breaking change** for any clients relying on the refresh token being present in the `/auth/tokens` JSON response body when using a browser context. Clients must pass the `auth-context: browser` header to opt in to cookie-based token delivery. Non-browser clients (e.g. the mobile app) are unaffected.
+
 ## [v0.1.0-beta.3] - 2026-05-01
 ### 🚀 Overview
 This release is headlined by the **migration of the web app to a server-action-based Backend-for-Frontend (BFF) architecture**, introducing secure server-side session management for all authentication flows. Supporting changes include an admin app authentication refactor, theme management improvements, dependency updates, and general codebase maintenance across the monorepo.

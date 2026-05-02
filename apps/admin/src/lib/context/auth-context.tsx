@@ -30,9 +30,7 @@ export type UserCredentials =
     };
 
 export type AuthData = {
-  accessToken: string;
   expiresAt: string;
-  refreshToken: string;
   userEmail: string;
 };
 
@@ -45,40 +43,17 @@ const AuthProvider = ({ children }: Props) => {
 
   let isMounting = false;
 
-  const isAccessTokenValid = (accessToken: string): boolean => {
-    try {
-      const payload = JSON.parse(atob(accessToken.split('.')[1]));
-      return payload.exp * 1000 > Date.now();
-    } catch {
-      return false;
-    }
-  };
-
   useEffect(() => {
-    const loadUserFromLocalStorage = async () => {
+    const loadUserFromStorage = async () => {
       if (!user && !isMounting) {
         isMounting = true;
         const authData = await getAuthItems();
 
-        if (authData && authData.userEmail && authData.refreshToken) {
-          if (authData.accessToken && isAccessTokenValid(authData.accessToken)) {
-            initApi({
-              accessToken: authData.accessToken,
-              refreshToken: authData.refreshToken,
-              expiresAt: authData.expiresAt,
-              email: authData.userEmail,
-            });
-            const fetchedUser = await fetchUser();
-            if (fetchedUser.isAdmin) {
-              setUser(fetchedUser);
-            } else {
-              await storeAuthItems();
-            }
-          } else {
-            await login({
-              email: authData.userEmail,
-              refreshToken: authData.refreshToken,
-            });
+        if (authData?.userEmail) {
+          try {
+            await restoreSession(authData.userEmail);
+          } catch {
+            await storeAuthItems();
           }
         }
 
@@ -87,8 +62,32 @@ const AuthProvider = ({ children }: Props) => {
       }
     };
 
-    void loadUserFromLocalStorage();
+    void loadUserFromStorage();
   }, [user]);
+
+  const restoreSession = async (email: string): Promise<void> => {
+    const { data, status } = await Api.auth.createToken({ email });
+
+    if (status === 201 && 'accessToken' in data.item && data.item.accessToken) {
+      initApi({
+        accessToken: data.item.accessToken,
+        expiresAt: data.item.expiresAt,
+        email,
+      });
+
+      const fetchedUser = await fetchUser();
+      if (fetchedUser.isAdmin) {
+        setUser(fetchedUser);
+        await storeAuthItems(fetchedUser, { expiresAt: data.item.expiresAt, userEmail: email });
+        return;
+      }
+
+      await storeAuthItems();
+      throw new AuthenticationError('User does not have admin access', 'INVALID_CREDENTIALS');
+    }
+
+    throw new AuthenticationError('Session restore failed', 'INVALID_CREDENTIALS');
+  };
 
   const login = async (credentials: UserCredentials, user?: UserModel) => {
     const tokens = await fetchTokens(credentials);
@@ -102,14 +101,17 @@ const AuthProvider = ({ children }: Props) => {
     }
 
     await storeAuthItems(user, {
-      accessToken: tokens.accessToken,
       expiresAt: tokens.expiresAt,
-      refreshToken: tokens.refreshToken,
       userEmail: credentials.email,
     });
   };
 
   const logout = async () => {
+    try {
+      await Api.auth.deleteRefreshTokenCookies();
+    } catch {
+      // proceed with local logout even if the server call fails
+    }
     await storeAuthItems();
   };
 
@@ -122,7 +124,7 @@ const AuthProvider = ({ children }: Props) => {
       'password' in credentials
         ? {
             email: credentials.email.toLowerCase(),
-            password: credentials?.password,
+            password: credentials.password,
           }
         : {
             email: credentials.email.toLowerCase(),
@@ -134,15 +136,12 @@ const AuthProvider = ({ children }: Props) => {
     if (status === 201 && 'accessToken' in data.item && data.item.accessToken) {
       initApi({
         accessToken: data.item.accessToken,
-        refreshToken: data.item.refreshToken,
         expiresAt: data.item.expiresAt,
         email: credentials.email,
       });
 
       return {
-        accessToken: data.item.accessToken,
         expiresAt: data.item.expiresAt,
-        refreshToken: data.item.refreshToken,
         userEmail: credentials.email,
       };
     }
@@ -173,8 +172,8 @@ const AuthProvider = ({ children }: Props) => {
     throw new AuthenticationError('Could not fetch user', 'USER_NOT_FOUND');
   };
 
-  const storeAuthItems = async (user?: UserModel, accessTokens?: AuthData) => {
-    LocalStorageProvider.setData('authData', accessTokens);
+  const storeAuthItems = async (user?: UserModel, authData?: AuthData) => {
+    LocalStorageProvider.setData('authData', authData);
     setUser(user);
   };
 

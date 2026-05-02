@@ -12,9 +12,10 @@ export function useRegister(options?: UseMutationWithCallbacksOptions<RegisterPa
   const { refreshUser } = useAuth();
 
   const { mutate, isPending } = useMutationWithCallbacks(async (data: RegisterParams) => {
-    const user = await register(data.email, data.password);
+    const result = await register(data.email, data.password);
     await refreshUser();
-    return UserModel.createFromApiUser(user);
+    if (!result.ok) throw new Error(result.error.message);
+    return UserModel.createFromApiUser(result.user);
   }, options);
 
   return { register: mutate, isBusy: isPending };

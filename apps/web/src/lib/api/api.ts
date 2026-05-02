@@ -104,14 +104,18 @@ export class Api {
       });
       if ('accessToken' in data.item) {
         const accessToken = data.item.accessToken;
-        const newRefreshData: refreshData = {
-          token: data.item.refreshToken,
-          expiresAt: new Date(data.item.expiresAt).getTime(),
-          email: this._refreshData.email,
-        };
-        this.refreshData = newRefreshData;
         this.accessToken = accessToken;
-        this.onRefreshDataUpdated?.(accessToken, newRefreshData);
+        if (data.item.refreshToken) {
+          const newRefreshData: refreshData = {
+            token: data.item.refreshToken,
+            expiresAt: new Date(data.item.expiresAt).getTime(),
+            email: this._refreshData.email,
+          };
+          this.refreshData = newRefreshData;
+          this.onRefreshDataUpdated?.(accessToken, newRefreshData);
+        } else {
+          this.onRefreshDataUpdated?.(accessToken, undefined);
+        }
         return accessToken;
       }
       return null;
@@ -154,19 +158,19 @@ export class Api {
 
               if ('accessToken' in data.item) {
                 const accessToken = data.item.accessToken;
-                const refreshData = {
-                  token: data.item.refreshToken,
-                  expiresAt: new Date(data.item.expiresAt).getTime(),
-                  email: this._refreshData.email,
-                };
-                this.refreshData = refreshData;
-
-                if (this.onRefreshDataUpdated) {
-                  this.onRefreshDataUpdated(accessToken, refreshData);
-                }
-
                 this.accessToken = accessToken;
                 config.headers.Authorization = `Bearer ${accessToken}`;
+                if (data.item.refreshToken) {
+                  const newRefreshData: refreshData = {
+                    token: data.item.refreshToken,
+                    expiresAt: new Date(data.item.expiresAt).getTime(),
+                    email: this._refreshData.email,
+                  };
+                  this.refreshData = newRefreshData;
+                  this.onRefreshDataUpdated?.(accessToken, newRefreshData);
+                } else {
+                  this.onRefreshDataUpdated?.(accessToken, undefined);
+                }
               }
             } catch (e: unknown) {
               console.error(e);
@@ -198,5 +202,6 @@ class UnauthenticatedApi extends Api {
 }
 
 // Default client for unauthenticated calls (login, register, password reset) — calls backend directly.
-export default new UnauthenticatedApi();
+const unauthenticatedApi = new UnauthenticatedApi();
+export default unauthenticatedApi;
 

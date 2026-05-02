@@ -4,13 +4,26 @@ import { CacheHandlerInterface } from '~/common/domain/cache-handler.interface';
 
 @Injectable()
 export class InMemoryCacheHandler implements CacheHandlerInterface {
+  private cache: Map<string, unknown> = new Map();
+  private rawCache: Map<string, { value: string; expiresAt: number | null }> = new Map();
+
   getRaw(key: string): Promise<string | null> {
-    throw new Error('Method not implemented.');
+    const entry = this.rawCache.get(key);
+    if (!entry) {
+      return Promise.resolve(null);
+    }
+    if (entry.expiresAt !== null && Date.now() > entry.expiresAt) {
+      this.rawCache.delete(key);
+      return Promise.resolve(null);
+    }
+    return Promise.resolve(entry.value);
   }
+
   setRaw(key: string, value: string, ttl: number): Promise<void> {
-    throw new Error('Method not implemented.');
+    const expiresAt = ttl > 0 ? Date.now() + ttl * 1000 : null;
+    this.rawCache.set(key, { value, expiresAt });
+    return Promise.resolve();
   }
-  private cache: Map<string, any> = new Map();
 
   get<T extends object>(
     id: string,
@@ -19,14 +32,14 @@ export class InMemoryCacheHandler implements CacheHandlerInterface {
     transformer?: ((data: object) => T) | undefined,
   ): Promise<T | null> {
     const key = this.getKey(id, className, version);
-    const data = this.cache.get(key);
+    const data = this.cache.get(key) as T | undefined;
     if (!data) {
       return Promise.resolve(null);
     }
     if (transformer) {
-      return Promise.resolve(transformer(data));
+      return Promise.resolve(transformer(data as object));
     }
-    return Promise.resolve(data as T);
+    return Promise.resolve(data);
   }
 
   getMany<T extends DtoInterface>(
@@ -35,7 +48,7 @@ export class InMemoryCacheHandler implements CacheHandlerInterface {
     version: number,
     transformer?: ((data: object) => T) | undefined,
   ): Promise<(T | null)[]> {
-    throw new Error('Method not implemented.');
+    return Promise.all(ids.map((id) => this.get<T>(id, className, version, transformer)));
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

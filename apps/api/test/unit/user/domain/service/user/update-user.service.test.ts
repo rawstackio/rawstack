@@ -1,5 +1,4 @@
 import * as dayjs from 'dayjs';
-import { randomUUID } from 'crypto';
 import { UserRepositoryInterface } from '~/user/domain/model/user/user-repository.interface';
 import { LoggedInUser } from '~/common/domain/logged-in-user';
 import { ForbiddenException } from '~/common/domain/exception/forbidden.exception';

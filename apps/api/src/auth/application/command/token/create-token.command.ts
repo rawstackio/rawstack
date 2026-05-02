@@ -10,12 +10,12 @@ export class CreateTokenCommand {
     public readonly invalidateTokens?: boolean,
   ) {}
 
-  static fromRequest(id: string, request: CreateTokenRequest): CreateTokenCommand {
+  static fromRequest(id: string, request: CreateTokenRequest, refreshToken?: string): CreateTokenCommand {
     return new CreateTokenCommand(
       id,
       request.email.toLowerCase(),
       request.password,
-      request.refreshToken,
+      refreshToken ?? request.refreshToken,
       request?.role,
       request?.invalidateTokens,
     );
