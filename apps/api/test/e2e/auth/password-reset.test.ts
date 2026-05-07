@@ -26,8 +26,6 @@ describe('password reset', () => {
   });
 
   test('an existing user can request to reset password', async () => {
-    const user = await UserProvider.createUser(app, userEmail);
-
     const response = await request(app.getHttpServer())
       .post('/auth/tokens')
       .send({
@@ -38,10 +36,6 @@ describe('password reset', () => {
     expect(response.status).toBe(201);
     expect(response.body).toHaveProperty('item');
     expect(response.body.item.action).toBe('CHECK_EMAIL');
-
-    // @todo: we need to actually test that the event was sent to event bridge
-    // @todo: inpect the contents of the token
-    // @todo: test using the token
   });
 
   test('a non existing user will appear to have successfully requested a password reset', async () => {

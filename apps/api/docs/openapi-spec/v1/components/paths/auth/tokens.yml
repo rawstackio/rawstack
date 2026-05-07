@@ -2,6 +2,26 @@ post:
   summary: Creates an Auth Token
   tags: [ authentication ]
   operationId: createToken
+  parameters:
+    - name: auth-context
+      in: header
+      required: false
+      description: >
+        When set to `browser`, the refresh token will be returned as an HttpOnly
+        `Set-Cookie` header instead of in the response body, and the
+        `refreshToken` field will be omitted from the JSON response.
+      schema:
+        type: string
+        enum: [ browser ]
+    - name: refresh-token
+      in: cookie
+      required: false
+      description: >
+        An existing refresh token cookie (sent automatically by the browser).
+        Used to refresh an existing session when re-authenticating in browser context.
+      schema:
+        type: string
+        format: uuid
   requestBody:
     required: true
     content:
@@ -10,11 +30,22 @@ post:
           $ref: '../../schemas/auth/token/request.yml#/AuthTokenPostRequest'
   responses:
     '200':
-     description: OK
-     content:
-       application/json:
-         schema:
-           $ref: '../../schemas/auth/token/response.yml#/AuthTokenResponse'
+      description: >
+        Token created successfully. When `auth-context: browser` is provided,
+        the `refreshToken` field is omitted from the body and instead returned
+        as an HttpOnly `Set-Cookie` header.
+      headers:
+        Set-Cookie:
+          description: >
+            Only present when `auth-context: browser`. Sets an HttpOnly
+            `refresh-token` cookie scoped to `/v1/auth/tokens`.
+          schema:
+            type: string
+            example: refresh-token=<uuid>; Path=/v1/auth/tokens; HttpOnly; SameSite=Strict
+      content:
+        application/json:
+          schema:
+            $ref: '../../schemas/auth/token/response.yml#/AuthTokenResponse'
     default:
       description: Unexpected error
       content:

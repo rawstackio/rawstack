@@ -1,10 +1,8 @@
 import * as dayjs from 'dayjs';
-import { randomUUID } from 'crypto';
 import { TokenRepositoryInterface } from '~/auth/domain/model/token/token-repository.interface';
 import { TokenHashRepositoryInterface } from '~/auth/domain/model/token/token-hash-repository.interface';
 import { TokenModel } from '~/auth/domain/model/token/token.model';
 import { EntityNotFoundException } from '~/common/domain/exception/entity-not-found.exception';
-import { UnauthorizedException } from '~/common/domain/exception/unauthorized.exception';
 import { CreatePasswordResetTokenService } from '~/auth/domain/service/token/create-password-reset-token.service';
 import { Id } from '~/common/domain/model/value-object/id';
 import { Email } from '~/common/domain/model/value-object/email';

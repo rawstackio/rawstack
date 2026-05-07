@@ -1,0 +1,23 @@
+delete:
+  summary: Destroys the refresh-token cookie
+  tags: [ authentication ]
+  operationId: deleteRefreshTokenCookies
+  description: >
+    Clears the HttpOnly `refresh-token` cookie by issuing a `Set-Cookie` header
+    with an expired max-age. Should be called on logout when the browser context
+    is in use.
+  responses:
+    '204':
+      description: Cookie cleared successfully.
+      headers:
+        Set-Cookie:
+          description: Expires the `refresh-token` cookie.
+          schema:
+            type: string
+            example: refresh-token=; Path=/v1/auth/tokens; HttpOnly; SameSite=Strict; Max-Age=0
+    default:
+      description: Unexpected error
+      content:
+        application/json:
+          schema:
+            $ref: '../../schemas/common/response.yml#/Error'

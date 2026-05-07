@@ -29,10 +29,11 @@ import { GetActionRequestQueryHandler } from '~/auth/application/query/action-re
 import { ExtractActionRequestDataService } from '~/auth/domain/service/action-request/extract-action-request-data.service';
 import { UpdateActionRequestService } from '~/auth/domain/service/action-request/update-action-request.service';
 import { ActionRequestResponseBuilder } from '~/auth/application/query/action-request/dto/action-request.response-builder';
+import { DeleteRefreshTokenCookiesAction } from '~/auth/infrastructure/controller/token/delete-refresh-token-cookies.action';
 
 @Module({
   imports: [JwtModule.register({}), CqrsModule, ConfigModule],
-  controllers: [CreateTokenAction, CreateActionRequestAction, GetActionRequestAction],
+  controllers: [CreateTokenAction, DeleteRefreshTokenCookiesAction, CreateActionRequestAction, GetActionRequestAction],
   providers: [
     // Command Handler
     CreateTokenCommandHandler,

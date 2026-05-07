@@ -13,12 +13,14 @@ describe('cn utility function', () => {
   })
 
   it('should handle conditional classes with falsy values', () => {
-    const result = cn('text-red-500', false && 'hidden', 'bg-blue-500')
+    const falsy = false as boolean;
+    const result = cn('text-red-500', falsy && 'hidden', 'bg-blue-500')
     expect(result).toBe('text-red-500 bg-blue-500')
   })
 
   it('should handle conditional classes with truthy values', () => {
-    const result = cn('text-red-500', true && 'hidden', 'bg-blue-500')
+    const truthy = true as boolean;
+    const result = cn('text-red-500', truthy && 'hidden', 'bg-blue-500')
     expect(result).toBe('text-red-500 hidden bg-blue-500')
   })
 
@@ -43,9 +45,10 @@ describe('cn utility function', () => {
   })
 
   it('should handle mixed input types', () => {
+    const falsy = false as boolean;
     const result = cn(
       'text-red-500',
-      ['bg-blue-500', false && 'hidden'],
+      ['bg-blue-500', falsy && 'hidden'],
       { 'border-2': true, 'p-4': false }
     )
     expect(result).toBe('text-red-500 bg-blue-500 border-2')

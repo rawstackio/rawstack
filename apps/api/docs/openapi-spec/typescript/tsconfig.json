@@ -7,7 +7,7 @@
     "outDir": "build",
     "rootDir": "src",
     "lib": ["es6", "dom"],
-    "moduleResolution":"node"
+    "moduleResolution": "bundler"
   },
   "include": ["src/*.ts"],
   "exclude": ["build", "node_modules"]

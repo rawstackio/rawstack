@@ -27,7 +27,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'div'>) 
   const onSubmit: SubmitHandler<Inputs> = async (data) => {
     try {
       await login(data);
-    } catch (error: unknown) {
+    } catch {
       toast.error('Something went wrong!');
     }
   };

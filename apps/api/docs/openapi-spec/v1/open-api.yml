@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: Rawstack TS API
-  version: v0.1.0-beta.3
+  version: v0.1.0-beta.4
 servers:
   - url: http://localhost:3000
     description: Local Server
@@ -16,6 +16,8 @@ paths:
   # auth domain
   /auth/tokens:
     $ref: './components/paths/auth/tokens.yml'
+  /auth/refresh-token-cookies:
+    $ref: './components/paths/auth/refresh-token-cookies.yml'
   /auth/action-requests:
     $ref: './components/paths/auth/action-requests.yml'
   /auth/action-requests/{requestId}:

@@ -4,7 +4,6 @@ import { Mutex, withTimeout } from 'async-mutex';
 import { AuthenticationError, ValidationError } from './exception/errors.ts';
 
 export type refreshData = {
-  token: string;
   expiresAt: number;
   email: string;
 };
@@ -25,6 +24,8 @@ class Api {
   constructor() {
     this.axiosInstance = axios.create({
       baseURL: import.meta.env.VITE_API_URL ?? '',
+      headers: { 'Auth-Context': 'browser' },
+      withCredentials: true,
     });
 
     this.axiosInstance.interceptors.request.use(this.preAuthorizeRequest, this.onRequestError);
@@ -71,10 +72,6 @@ class Api {
     this.setUpApis();
   }
 
-  set refreshData(data: refreshData) {
-    this._refreshData = data;
-  }
-
   private mutex = withTimeout(new Mutex(), 12000);
 
   protected preAuthorizeRequest = async (config: InternalAxiosRequestConfig): Promise<InternalAxiosRequestConfig> => {
@@ -92,24 +89,22 @@ class Api {
             const release = await this.mutex.acquire();
             try {
               const { data } = await this.auth.createToken({
-                refreshToken: this._refreshData.token,
                 email: this._refreshData.email,
               });
 
               if ('accessToken' in data.item) {
                 const refreshData = {
-                  token: data.item.refreshToken,
                   expiresAt: new Date(data.item.expiresAt).getTime(),
                   email: this._refreshData.email,
                 };
-                this.refreshData = refreshData;
+                this._refreshData = refreshData;
+
+                this.accessToken = data.item.accessToken;
+                config.headers['Authorization'] = `Bearer ${this._accessToken}`;
 
                 if (this.onRefreshDataUpdated) {
                   this.onRefreshDataUpdated(this._accessToken, refreshData);
                 }
-
-                this.accessToken = data.item.accessToken;
-                config.headers['Authorization'] = `Bearer ${this._accessToken}`;
               }
             } finally {
               release();
